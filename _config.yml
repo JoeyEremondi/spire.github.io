@@ -3,9 +3,9 @@
 # ----------------------- #
 
 url: http://spire.github.io
-title: My Octopress Blog
-subtitle: A blogging framework for hackers.
-author: Your Name
+title: Spire Language Development Blog
+subtitle: Your daily dose of dependently typed language implementation mistakes.
+author: Spire
 simple_search: http://google.com/search
 description:
 
@@ -90,7 +90,7 @@ delicious_user:
 delicious_count: 3
 
 # Disqus Comments
-disqus_short_name:
+disqus_short_name: spire-lang
 disqus_show_comment_count: false
 
 # Google Analytics
