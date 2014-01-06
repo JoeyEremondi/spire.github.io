@@ -4,7 +4,7 @@
   <title><![CDATA[Spire Language Development Blog]]></title>
   <link href="http://spire.github.io/atom.xml" rel="self"/>
   <link href="http://spire.github.io/"/>
-  <updated>2014-01-05T17:23:19-08:00</updated>
+  <updated>2014-01-05T21:45:57-08:00</updated>
   <id>http://spire.github.io/</id>
   <author>
     <name><![CDATA[Spire]]></name>
@@ -29,13 +29,13 @@ year I&rsquo;m going to try out this daily development blog.</p>
 <h2>Goals</h2>
 
 <p>My friend and colleague <a href="http://web.cecs.pdx.edu/~ntc2/">Nathan</a> is
-also hacking on it nowadays. The goals of the project are as follows.</p>
+also hacking on it nowadays. The goals of the project are as follows:</p>
 
 <ul>
 <li>To help the implementors learn how a dependent type checker works.</li>
 <li>To end up with a platform for experimenting with dependently typed
 generic programming.</li>
-<li>To elaborate everything in the langauge to a core type theory.</li>
+<li>To elaborate everything in the language to a core type theory.</li>
 <li>To formalize the type checker of the core type theory.</li>
 </ul>
 
@@ -66,7 +66,7 @@ instance:</p>
 <ul>
 <li>Big-step semantics (evaluation) can go from expressions to canonical
 terms, ensuring that you did not forget to reduce any β-redex.</li>
-<li>A type-checking function can checks expressions against reduced
+<li>A type-checking function checks expressions against reduced
 types. If the reduced types are canonical terms, you don&rsquo;t need to
 check for and throw errors due to expressions containing redexes.</li>
 <li>Other algorithms, such as unification, also benefit from operating
@@ -80,7 +80,7 @@ implements his dependently typed unification this way.</li>
 
 <p>Because so many algorithms in a dependently typed language take or
 return redex-free terms, having a canonical type theory makes things
-easier and less error prone. Substitution into canonical terms is no
+easier and less error prone. Canonical terms are no
 longer closed under substitution, hence <em>hereditary substitution</em>
 evaluates as it substitutes to remove redexes.</p>
 
@@ -120,7 +120,7 @@ Dagand&rsquo;s
 <a href="http://gallium.inria.fr/~pdagand/stuffs/thesis-2011-phd/thesis.pdf">thesis</a>
 describes this process well. A minor difference is that we are
 elaborating to canonical terms rather than a core theory that includes
-expressions. The metatheorem for soundness of elaboratinon described
+expressions. The metatheorem for soundness of elaboration described
 by Dagand corresponds to type preservation: After elaboration of a
 well-typed surface term, you get a well-typed core term. In the
 eventually formalized Spire canonical type theory, this will be
@@ -128,7 +128,7 @@ proven. In the current Haskell version, this is
 <a href="https://github.com/spire/spire/blob/f948548c4b5793fdc042989404f4aad49a5015cc/src/Spire/Pipeline.hs#L29">dynamically checked</a>
 rather than proven.</p>
 
-<p>Spire is currently split into 3 langauges. The top language called
+<p>Spire is currently split into 3 languages. The top language called
 <a href="https://github.com/spire/spire/blob/f948548c4b5793fdc042989404f4aad49a5015cc/src/Spire/Surface/Types.hs">Surface</a>
 is what the user programs in. Elaboration from surface proceeds to
 <a href="https://github.com/spire/spire/blob/f948548c4b5793fdc042989404f4aad49a5015cc/src/Spire/Expression/Types.hs">Expression</a>.
@@ -143,7 +143,7 @@ pattern matching syntax. Eloboration proceeds from expressions to
 <a href="https://github.com/spire/spire/blob/master/src/Spire/Canonical/Types.hs">Canonical</a>
 terms. This performs type checking, introduces and solves unification
 problems, and removes β-redexes. To keep the canonical terms smaller,
-we only require them to checkable rather than
+we only require them to be checkable rather than
 inferrable/synthesizable. Canonical terms can be checked
 bidirectionally, as they are already grammatically split into Values
 and neutrals/spines. This works so long as every eliminator only
@@ -159,7 +159,7 @@ there are embedding functions to go back up the chain of languages. Another
 that appears as a dynamic check in Spire is: if you evaluate a
 well-typed term to a canonical, then embed it back up to a surface
 term and evaluate it again, you get back the same canonical term. This
-becomes more important as the surface and canonical grammars diverge
+becomes more important as the surface and canonical languages diverge
 more. Embedding is used to pretty-print canonicals after evaluation,
 for example in error messages. Although messing up embedding does not
 affect consistency, as a practical matter it would confuse the user if
@@ -175,16 +175,17 @@ relies on the higher-order unification algorithm and library by
 <a href="https://github.com/adamgundry/type-inference">Gundry</a>, and currently
 translates between Spire terms and Gundry terms.</p>
 
-<h3>Substitution</h3>
+<h3>Substitution &amp; Binding</h3>
 
 <p>With something like NbE in
 <a href="http://www.andres-loeh.de/LambdaPi/">Lambda Pi</a>
 you get to inherit  binding
-structure from the meta-language. In Spire binding must be implemented
+structure and substitution from the meta-language. In Spire binding must be implemented
 directly, but thanks to the
 <a href="http://hackage.haskell.org/package/unbound">Unbound</a> library a lot of
-this can be automated. We also added a <a href="https://github.com/spire/substM">monadic
-extension</a> that makes it possible to
+this can be automated. We also added a
+<a href="https://github.com/spire/substM">monadic extension</a>
+that makes it possible to
 use Unbound for hereditary substitution, used like
 <a href="https://github.com/spire/spire/blob/f948548c4b5793fdc042989404f4aad49a5015cc/src/Spire/Canonical/Evaluator.hs#L23">this</a>
 in Spire.</p>
@@ -194,7 +195,7 @@ in Spire.</p>
 <p>My near term next steps are going to be adding <code>Desc</code>riptions and implementing Dagand&rsquo;s data
 declaration elaboration work, as well as working on trying to
 formalize termination of Spire&rsquo;s canonical theory. We&rsquo;re leaving
-type-in-type in for now, as I&rsquo;m
+type-in-type in the Haskell code for now, as I&rsquo;m
 <a href="https://github.com/larrytheliquid/leveling-up">comfortable enough</a>
 with universe hierarchies now to add them later (famous last words).
 That&rsquo;s it for now folks, see you tomorrow with the start of a nice new
