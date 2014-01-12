@@ -2,7 +2,7 @@
 #      Main Configs       #
 # ----------------------- #
 
-url: http://spire.github.io
+url: http://spire-lang.org
 title: Spire Language Development Blog
 subtitle: Your weekly dose of dependently typed language implementation mistakes.
 author: Spire
