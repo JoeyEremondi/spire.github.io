@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Spire Language Development Blog]]></title>
-  <link href="http://spire.github.io/atom.xml" rel="self"/>
-  <link href="http://spire.github.io/"/>
-  <updated>2014-01-11T21:35:39-08:00</updated>
-  <id>http://spire.github.io/</id>
+  <link href="http://spire-lang.org/atom.xml" rel="self"/>
+  <link href="http://spire-lang.org/"/>
+  <updated>2014-01-11T21:36:56-08:00</updated>
+  <id>http://spire-lang.org/</id>
   <author>
     <name><![CDATA[Spire]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[An Unremarkable Type Checker]]></title>
-    <link href="http://spire.github.io/blog/2014/01/05/an-unremarkable-type-checker/"/>
+    <link href="http://spire-lang.org/blog/2014/01/05/an-unremarkable-type-checker/"/>
     <updated>2014-01-05T15:03:57-08:00</updated>
-    <id>http://spire.github.io/blog/2014/01/05/an-unremarkable-type-checker</id>
+    <id>http://spire-lang.org/blog/2014/01/05/an-unremarkable-type-checker</id>
     <content type="html"><![CDATA[<p>Since becoming a PhD student at Portland State,
 <a href="https://twitter.com/larrytheliquid">I&rsquo;ve</a> been occasionally
 hacking on what is currently a rather

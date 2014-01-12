@@ -1,4 +1,4 @@
 User-agent: *
 Disallow: 
 
-Sitemap: http://spire.github.io/sitemap.xml 
+Sitemap: http://spire-lang.org/sitemap.xml 
