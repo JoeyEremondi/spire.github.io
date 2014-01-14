@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "An unremarkable type checker"
+title: "An Unremarkable Type Checker"
 author: Larry Diehl
 date: 2014-01-05 15:03:57 -0800
 comments: true
@@ -14,6 +14,8 @@ hacking on what is currently a rather
 to become a dependently typed language for experimenting with generic
 programming. Development has been slow and sporadic, so for the new
 year I'm going to try out this daily development blog. 
+
+<!-- more -->
 
 ## Goals
 
