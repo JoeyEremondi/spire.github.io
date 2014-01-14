@@ -60,7 +60,7 @@ When first implementing the `Desc`ription technology, it will be
 convenient to have a sufficiently complex example to typecheck. The
 following standard sequence of types and functions suits this goal.
 
-``` haskell Pattern Matching https://github.com/spire/spire/blob/0e34d3e67b7c1c95ec233b1b5fb3101c535bb088/formalization/agda/Spire/Examples/Standard.agda#L34-L52
+``` haskell Functions using Pattern Matching https://github.com/spire/spire/blob/0e34d3e67b7c1c95ec233b1b5fb3101c535bb088/formalization/agda/Spire/Examples/Standard.agda#L34-L52
 data ℕ : Set where
   zero : ℕ
   suc : (n : ℕ) → ℕ
@@ -90,8 +90,8 @@ This sequence of functions has the nice property that each function
 builds upon the previous ones (either in its type, value, or both),
 ending in the definition of `concat`. Furthemore, concat has
 a moderatley complicated dependent type, but only eliminates type
-families indexed by variables. Eliminating type families indexed by
-constructors or functions requires more clever motive synthesis
+families applied to a sequence of variables. Eliminating type families
+applied to expressions built from constructors requires more clever motive synthesis
 (via [Eliminating Dependent Pattern Matching](http://strictlypositive.org/goguen.pdf)
 by Goguen et. al.) that we would like to ignore for this first pass.
 
@@ -99,10 +99,10 @@ by Goguen et. al.) that we would like to ignore for this first pass.
 
 Translating these basic functions into eliminators is straightforward.
 Because we only eliminate type families applied to a sequence
-variables, the branch functions supplied to the eliminator look like
+of variables, the branch functions supplied to the eliminator look like
 pattern matching, and the whole definition is rather compact.
 
-``` haskell Eliminators https://github.com/spire/spire/blob/0e34d3e67b7c1c95ec233b1b5fb3101c535bb088/formalization/agda/Spire/Examples/Standard.agda#L54-L76
+``` haskell Functions using Eliminators https://github.com/spire/spire/blob/0e34d3e67b7c1c95ec233b1b5fb3101c535bb088/formalization/agda/Spire/Examples/Standard.agda#L54-L76
 add : ℕ → ℕ → ℕ
 add = elimℕ (λ _ → ℕ → ℕ)
   (λ n → n)
@@ -126,3 +126,62 @@ concat A m = elimVec (Vec A m) (λ n xss → Vec A (mult n m))
 
 ## Computational Descriptions
 
+Now we will consider `Desc`riptions as they appear in
+[Dagand's thesis](http://gallium.inria.fr/~pdagand/stuffs/thesis-2011-phd/thesis.pdf),
+which are the core type theory analogue to surface language datatype
+definitions. 
+
+``` haskell Computational Description Datatypes https://github.com/spire/spire/blob/0e34d3e67b7c1c95ec233b1b5fb3101c535bb088/formalization/agda/Spire/Examples/ComputationalDesc.agda#L19-L20
+data Desc (I : Set) : Set₁ where
+  `⊤ : Desc I
+  `X : (i : I) → Desc I
+  `Σ `Π : (A : Set) (B : A → Desc I) → Desc I
+
+El : (I : Set) (D : Desc I) (X : I → Set) → Set
+El I `⊤ X = ⊤
+El I (`X i) X = X i
+El I (`Σ A B) X = Σ A (λ a → El I (B a) X)
+El I (`Π A B) X = (a : A) → El I (B a) X
+
+data μ (I : Set) (R : I → Desc I) (i : I) : Set where
+  con : El I (R i) (μ I R) → μ I R i
+```
+
+A well known isomorphism exists between sums and dependent products
+whose domain is some finite collection. To encode a type such as `ℕ`,
+we can use a `Σ` whose domain is an index into an enumeration of the
+contructor names `zero` and `suc`.
+
+``` haskell ℕ Declaration https://github.com/spire/spire/blob/0e34d3e67b7c1c95ec233b1b5fb3101c535bb088/formalization/agda/Spire/Examples/ComputationalDesc.agda#L57-L67
+data ℕT : Set where `zero `suc : ℕT
+
+ℕD : ⊤ → Desc ⊤
+ℕD tt = `Σ ℕT λ
+  { `zero → `⊤
+  ; `suc → `X tt
+  }
+
+ℕ : ⊤ → Set
+ℕ = μ ⊤ ℕD
+```
+
+If you've been reading carefully, you noticed that `μ` did not take a
+`Desc`ription as an argument, but a function from the index to a
+description. Certain type families can be defined computationally (as
+functions from their index), as in
+[Inductive Families Need Not Store Their Indices](http://eb.host.cs.st-andrews.ac.uk/writings/types2003.pdf)
+by Brady et. al. Eliminating functions defined in this style leads to
+particularly nice reduction behaviour, buying you free equations
+thanks to definitional equality. `ℕ` was not indexed, but below is an
+example of defining `Vec` as a computational description.
+
+``` haskell Vec Declaration https://github.com/spire/spire/blob/0e34d3e67b7c1c95ec233b1b5fb3101c535bb088/formalization/agda/Spire/Examples/ComputationalDesc.agda#L77-L82
+data VecT : Set where `nil `cons : VecT
+
+VecD : (A : Set) (n : ℕ tt) → Desc (ℕ tt)
+VecD A zero = `⊤
+VecD A (suc n) = `Σ A λ _ → `X n
+
+Vec : (A : Set) (n : ℕ tt) → Set
+Vec A n = μ (ℕ tt) (VecD A) n
+```
