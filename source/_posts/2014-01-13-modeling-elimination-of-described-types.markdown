@@ -54,13 +54,13 @@ All of the code from this post can be
 Additionally, each code snippet contains a link to the specific file
 in the **top right corner**.
 
-## Functions using Pattern Matching
+## Pattern Matching
 
 When first implementing the `Desc`ription technology, it will be
 convenient to have a sufficiently complex example to typecheck. The
 following standard sequence of types and functions suits this goal.
 
-``` haskell Functions using pattern matching https://github.com/spire/spire/blob/0e34d3e67b7c1c95ec233b1b5fb3101c535bb088/formalization/agda/Spire/Examples/Standard.agda#L34
+``` haskell Pattern Matching https://github.com/spire/spire/blob/0e34d3e67b7c1c95ec233b1b5fb3101c535bb088/formalization/agda/Spire/Examples/Standard.agda#L34-L52
 data ℕ : Set where
   zero : ℕ
   suc : (n : ℕ) → ℕ
@@ -95,4 +95,34 @@ constructors or functions requires more clever motive synthesis
 (via [Eliminating Dependent Pattern Matching](http://strictlypositive.org/goguen.pdf)
 by Goguen et. al.) that we would like to ignore for this first pass.
 
-## Functions using Eliminators
+## Eliminators
+
+Translating these basic functions into eliminators is straightforward.
+Because we only eliminate type families applied to a sequence
+variables, the branch functions supplied to the eliminator look like
+pattern matching, and the whole definition is rather compact.
+
+``` haskell Eliminators https://github.com/spire/spire/blob/0e34d3e67b7c1c95ec233b1b5fb3101c535bb088/formalization/agda/Spire/Examples/Standard.agda#L54-L76
+add : ℕ → ℕ → ℕ
+add = elimℕ (λ _ → ℕ → ℕ)
+  (λ n → n)
+  (λ m ih n → suc (ih n))
+
+mult : ℕ → ℕ → ℕ
+mult = elimℕ (λ _ → ℕ → ℕ)
+  (λ n → zero)
+  (λ m ih n → add n (ih n))
+
+append : (A : Set) (m : ℕ) (xs : Vec A m) (n : ℕ) (ys : Vec A n) → Vec A (add m n)
+append A = elimVec A (λ m xs → (n : ℕ) (ys : Vec A n) → Vec A (add m n))
+  (λ n ys → ys)
+  (λ m x xs ih n ys → cons (add m n) x (ih n ys))
+
+concat : (A : Set) (m n : ℕ) (xss : Vec (Vec A m) n) → Vec A (mult n m)
+concat A m = elimVec (Vec A m) (λ n xss → Vec A (mult n m))
+  nil
+  (λ n xs xss ih → append A m xs (mult n m) ih)
+```
+
+## Computational Descriptions
+
