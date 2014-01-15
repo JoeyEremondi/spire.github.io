@@ -2,7 +2,7 @@
 layout: post
 title: "Modeling Elimination of Described Types"
 author: Larry Diehl
-date: 2014-01-13 16:50:12 -0800
+date: 2014-01-14 09:50:12 -0800
 comments: true
 categories: 
 ---
@@ -52,7 +52,7 @@ and most concepts in this post, can be found in
 ## Note
 
 All of the code from this post can be
-[found in Spire](https://github.com/spire/spire/tree/9072290976f72c7d2d7e71d578d11fa07e2873fe/formalization/agda/Spire/Examples).
+[found in Spire](https://github.com/spire/spire/tree/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples).
 Additionally, each code snippet contains a link to the specific file
 in the **top right corner**.
 
@@ -62,7 +62,7 @@ When first implementing the `Desc`ription technology, it will be
 convenient to have a sufficiently complex example to typecheck. The
 following standard sequence of types and functions suits this goal.
 
-``` haskell Functions using Pattern Matching https://github.com/spire/spire/blob/9072290976f72c7d2d7e71d578d11fa07e2873fe/formalization/agda/Spire/Examples/Standard.agda#L34-L52
+``` haskell Functions using Pattern Matching https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/Standard.agda#L34-L52
 data ℕ : Set where
   zero : ℕ
   suc : (n : ℕ) → ℕ
@@ -104,7 +104,7 @@ Because we only eliminate type families applied to a sequence
 of variables, the branch functions supplied to the eliminator look like
 pattern matching, and the whole definition is rather compact.
 
-``` haskell Functions using Eliminators https://github.com/spire/spire/blob/9072290976f72c7d2d7e71d578d11fa07e2873fe/formalization/agda/Spire/Examples/Standard.agda#L54-L76
+``` haskell Functions using Eliminators https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/Standard.agda#L54-L76
 add : ℕ → ℕ → ℕ
 add = elimℕ (λ _ → ℕ → ℕ)
   (λ n → n)
@@ -133,7 +133,7 @@ Now we will consider `Desc`riptions as they appear in
 which are the core type theory analogue to surface language datatype
 definitions. 
 
-``` haskell Computational Description Datatypes https://github.com/spire/spire/blob/9072290976f72c7d2d7e71d578d11fa07e2873fe/formalization/agda/Spire/Examples/ComputationalDesc.agda#L19-L20
+``` haskell Computational Description Datatypes https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/ComputationalDesc.agda#L19-L20
 data Desc (I : Set) : Set₁ where
   `⊤ : Desc I
   `X : (i : I) → Desc I
@@ -154,7 +154,7 @@ whose domain is some finite collection. To encode a type such as `ℕ`,
 we can use a `Σ` whose domain is an index into an enumeration of the
 contructor names `zero` and `suc`.
 
-``` haskell ℕ Declaration https://github.com/spire/spire/blob/9072290976f72c7d2d7e71d578d11fa07e2873fe/formalization/agda/Spire/Examples/ComputationalDesc.agda#L57-L67
+``` haskell Computational ℕ Declaration https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/ComputationalDesc.agda#L57-L67
 data ℕT : Set where `zero `suc : ℕT
 
 ℕD : ⊤ → Desc ⊤
@@ -177,7 +177,7 @@ particularly nice reduction behaviour, buying you free equations
 thanks to definitional equality. `ℕ` was not indexed, but below is an
 example of defining `Vec` as a computational description.
 
-``` haskell Vec Declaration https://github.com/spire/spire/blob/9072290976f72c7d2d7e71d578d11fa07e2873fe/formalization/agda/Spire/Examples/ComputationalDesc.agda#L77-L82
+``` haskell Computational Vec Declaration https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/ComputationalDesc.agda#L77-L82
 data VecT : Set where `nil `cons : VecT
 
 VecD : (A : Set) (n : ℕ tt) → Desc (ℕ tt)
@@ -196,7 +196,7 @@ in the costructor. Intead, `ind` has a single branch (called `pcon`
 below) that bundles up all branches of a typical eliminator, along
 with an `All` argument for all recursive motive proofs.
 
-``` haskell ind Eliminator Type https://github.com/spire/spire/blob/9072290976f72c7d2d7e71d578d11fa07e2873fe/formalization/agda/Spire/Examples/ComputationalDesc.agda#L30-L37
+``` haskell ind Elimination Rule Type https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/ComputationalDesc.agda#L30-L37
 ind :
   (I : Set)
   (R : I → Desc I)
@@ -210,13 +210,12 @@ ind :
 Using this eliminator we can define our running example of function
 definitions. Here we use `ind` rather than pattern matching. The
 anonymous function argument represents sugared "{}" syntax from
-Dagand thesis example 3.19. Additionally, the arguments bound in each
+Dagand thesis `Example 3.19`. Additionally, the arguments bound in each
 constructor pattern match clause are desugared into projections on the
 right hand side. We will see what the final desugared terms look like
 later in this post.
 
-
-``` haskell Computational Desc Functions https://github.com/spire/spire/blob/9072290976f72c7d2d7e71d578d11fa07e2873fe/formalization/agda/Spire/Examples/ComputationalDesc.agda#L92-L124
+``` haskell Computational Desc Functions https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/ComputationalDesc.agda#L92-L124
 add : ℕ tt → ℕ tt → ℕ tt
 add = ind ⊤ ℕD (λ _ _ → ℕ tt → ℕ tt)
   (λ
@@ -258,13 +257,17 @@ description for the type family (e.g. `Vec`) definitionally unfolds.
 However, things get a bit clunkier once we wish to support named
 constructor arguments. Notice that we defined `ℕ` with an enumeration
 for the constructor arguments, but we did not do the same for `Vec`.
-Example 7.46 in Dagand shows how to elaborate `Vec` into a description
+`Example 7.46` in Dagand shows how to elaborate `Vec` into a description
 that has named constructor arguments. This involves first wrapping the
 description in an `elim` constructor identify `Vec` as a type defined
 by computation over its index. Then, the `zero` and `suc` branches
 return `zero` and `suc` constructor tags respectively. In this case,
 the constructors index into singleton enumerations, i.e. `elim` into
-`[elim]`, `zero` into `[zero]`, and `suc` into `[suc]`.
+`[elim]`, `zero` into `[zero]`, and `suc` into `[suc]`. If we were
+defining a type that had multiple constructors with the same index for
+a particular index branch (i.e. `zero`) then the enumeration would not
+be a singleton, but it would still only be sub-enumeration of the
+total enumeration of constructors that we have in mind for the type.
 
 In contrast,
 the `ℕ` description tag constructors both belong to a more natural
@@ -277,9 +280,217 @@ Additionally, type families defined by computation over the index are
 only a subclass of all possible type families. The remaining types
 (and actually, all type families) can be alternatively defined by
 constraining the index with a propositional equality proof. See Dagand
-example 7.45 for how to define `Vec` this way. This type of definition
+`Example 7.45` for how to define `Vec` this way. This type of definition
 keeps the more natural enumeration of constructor tags. I will call
 types defined this way "propositional descriptions".
+
+## Propositional Descriptions
+
+Although computational descriptions give you an additional way to
+define types, in practice once you add named constructors and perform
+elaboration of patterns to eliminators, I don't feel like they buy you
+enough for the additional complexity. I am content with supporting
+Agda-style propositionally defined datatypes exclusively. Given this
+decision, we can make change the grammar of descriptions to more
+closely resemble the surface language Agda-style datatype
+declarations. I saw something like this alternative `Desc` definition
+from the code accompanying a
+[blog post](http://perso.ens-lyon.fr/guillaume.allais/?en/main/blog/read/syntax-binding-run-omega) 
+by Guillaume Allais.
+
+``` haskell Propositional Description Datatypes https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/PropositionalDesc.agda#L38-L54
+data Desc (I : Set) : Set₁ where
+  `End : (i : I) → Desc I
+  `Rec : (i : I) (D : Desc I) → Desc I
+  `Arg : (A : Set) (B : A → Desc I) → Desc I
+  `RecFun : (A : Set) (B : A → I) (D : Desc I) → Desc I
+
+ISet : Set → Set₁
+ISet I = I → Set
+
+El : (I : Set) (D : Desc I) (X : ISet I) → ISet I
+El I (`End j) X i = j ≡ i
+El I (`Rec j D) X i = X j × El I D X i
+El I (`Arg A B) X i = Σ A (λ a → El I (B a) X i)
+El I (`RecFun A B D) X i = ((a : A) → X (B a)) × El I D X i
+
+data μ (I : Set) (D : Desc I) (i : I) : Set where
+  con : El I D (μ I D) i → μ I D i
+```
+
+This description grammar enforces descriptions to look like what we
+are used to seeing in datatype declarations. For example,
+`Rec/Arg/RecFun`, corresponding to the previous `X/Σ/Π` constructors,
+take an extra
+description argument at the end. Then `End`, formerly `⊤`, ends the
+"constructor" with an index value. The interpretation function uses
+this index value to ask for a propositionally equality proof, making
+sure that the index of the constructor you produce matches the index
+of the type you specified. This can be achieved in the previous `Desc`
+grammar by ending a descriptions with `Σ (x ≡ y) λ _ → ⊤`, but here
+that pattern is internalized. One pleasant consequence can be seen by
+looking at the `μ` datatype. It no longer requires a function from the
+index to a description, and now merely requires a description. Because
+we no longer support computational described datatypes (instead
+describing them all propositionally), our descriptions can be
+first-order rather than higher-order. The more first-order your
+descriptions are, the more
+[fully generic programming](https://github.com/larrytheliquid/leveling-up)
+you can do over them.
+
+The `ℕ` datatype is declared pretty much the same as before. However,
+`Vec` is now given with its constructor names, and the index of a
+particular constructor is given at the end of the sequence of
+constructor arguments. Compare this to the Agda data declaration at
+the top the post and notice the similar structure.
+
+``` haskell Propositional ℕ & Vec Declarations https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/PropositionalDesc.agda#L97-L122
+  data ℕT : Set where `zero `suc : ℕT
+  data VecT : Set where `nil `cons : VecT
+
+  ℕD : Desc ⊤
+  ℕD = `Arg ℕT λ
+    { `zero → `End tt
+    ; `suc → `Rec tt (`End tt)
+    }
+
+  ℕ : ⊤ → Set
+  ℕ = μ ⊤ ℕD
+
+  VecD : (A : Set) → Desc (ℕ tt)
+  VecD A = `Arg VecT λ
+    { `nil  → `End zero
+    ; `cons → `Arg (ℕ tt) λ n → `Arg A λ _ → `Rec n (`End (suc n))
+    }
+
+  Vec : (A : Set) (n : ℕ tt) → Set
+  Vec A n = μ (ℕ tt) (VecD A) n
+```
+
+Our function definitions for `add` and `mult` are pretty much
+unchanged, but `append` and `concat` have one significant difference.
+Both `Vec` constructors do a dependent pattern match on a
+propositional equality proof. However, this is once again a rather
+simple dependent match that can just be elaborated to uses of
+substitution. Specifically, this elaboration is the `solution` step of
+`Lemma 16` in
+[Eliminating Dependent Pattern Matching](http://strictlypositive.org/goguen.pdf).
+
+``` haskell Propositional Desc Functions https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/PropositionalDesc.agda#L132-L164
+add : ℕ tt → ℕ tt → ℕ tt
+add = ind ⊤ ℕD (λ _ _ → ℕ tt → ℕ tt)
+  (λ
+    { tt (`zero , q) tt n → n
+    ; tt (`suc , m , q) (ih , tt) n → suc (ih n)
+    }
+  )
+  tt
+
+mult : ℕ tt → ℕ tt → ℕ tt
+mult = ind ⊤ ℕD (λ _ _ → ℕ tt → ℕ tt)
+  (λ
+    { tt (`zero , q) tt n → zero
+    ; tt (`suc , m , q) (ih , tt) n → add n (ih n)
+    }
+  )
+  tt
+
+append : (A : Set) (m : ℕ tt) (xs : Vec A m) (n : ℕ tt) (ys : Vec A n) → Vec A (add m n) 
+append A = ind (ℕ tt) (VecD A) (λ m xs → (n : ℕ tt) (ys : Vec A n) → Vec A (add m n))
+  (λ
+    { .(con (`zero , refl)) (`nil , refl) ih n ys → ys
+    ; .(con (`suc , m , refl)) (`cons , m , x , xs , refl) (ih , tt) n ys → cons A (add m n) x (ih n ys)
+    }
+  )
+
+concat : (A : Set) (m n : ℕ tt) (xss : Vec (Vec A m) n) → Vec A (mult n m)
+concat A m = ind (ℕ tt) (VecD (Vec A m)) (λ n xss → Vec A (mult n m))
+  (λ
+    { .(con (`zero , refl)) (`nil , refl) tt → nil A
+    ; .(con (`suc , n , refl)) (`cons , n , xs , xss , refl) (ih , tt) → append A m xs (mult n m) ih
+    }
+  )
+```
+
+## Desugared Propositional Descriptions
+
+I will now show the desugared final forms of the propositional
+description code given so far. It is very important to studies these
+terms carefully, as they are the terms of our canonical type theory
+and will appear as types everywhere throughout our language (as types
+are fully evaluated terms). 
+
+The first bit of sugar we will get rid of has to do with the pattern
+matching we have been performing on finite enumerations of tags
+(representing constructor names). The enumeration `Enum` will be a
+list of strings. `Tag` is an index into `Enum` (like `Fin` into `ℕ`).
+`Cases` is a finite product of values in a type family indexed by each
+`Tag` (like `Vec` with type family values indexed by `ℕ`). Finally,
+`case` eliminates a tag by returning the value in `Cases` at that
+position/name. I've renamed these contstructs, and their original
+names in Dagand are `EnumU`, `EnumT`, `π`, and `switch` and can be
+found in `Definition 2.49` and `Definition 2.52`.
+
+``` haskell Enum & Tag https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/PropositionalDesc.agda#L18-L34
+Label : Set
+Label = String
+
+Enum : Set
+Enum = List Label
+
+data Tag : Enum → Set where
+  here : ∀{l E} → Tag (l ∷ E)
+  there : ∀{l E} → Tag E → Tag (l ∷ E)
+
+Cases : (E : Enum) (P : Tag E → Set) → Set
+Cases [] P = ⊤
+Cases (l ∷ E) P = P here × Cases E λ t → P (there t)
+
+case : (E : Enum) (P : Tag E → Set) (cs : Cases E P) (t : Tag E) → P t
+case (l ∷ E) P (c , cs) here = c
+case (l ∷ E) P (c , cs) (there t) = case E (λ t → P (there t)) cs t
+
+caseD : (E : Enum) (I : Set) (cs : Cases E (λ _ → Desc I)) (t : Tag E) → Desc I
+caseD E I cs t = case E (λ _ → Desc I) cs t
+```
+
+In the sugared version of descriptions for datatypes we match on a tag
+and return a description for it. In the desugared version, we instead
+eliminate a tag with the special `case` elimination rule.
+
+``` haskell Desugared ℕ & Vec Declarations https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/PropositionalDesc.agda#L170-L206
+ℕT : Enum
+ℕT = "zero" ∷ "suc" ∷ []
+
+VecT : Enum
+VecT = "nil" ∷ "cons" ∷ []
+
+ℕC : Tag ℕT → Desc ⊤
+ℕC = caseD ℕT ⊤
+  ( `End tt
+  , `Rec tt (`End tt)
+  , tt
+  )
+
+ℕD : Desc ⊤
+ℕD = `Arg (Tag ℕT) ℕC
+
+ℕ : ⊤ → Set
+ℕ = μ ⊤ ℕD
+
+VecC : (A : Set) → Tag VecT → Desc (ℕ tt)
+VecC A = caseD VecT (ℕ tt)
+  ( `End zero
+  , `Arg (ℕ tt) (λ n → `Arg A λ _ → `Rec n (`End (suc n)))
+  , tt
+  )
+
+VecD : (A : Set) → Desc (ℕ tt)
+VecD A = `Arg (Tag VecT) (VecC A)
+
+Vec : (A : Set) (n : ℕ tt) → Set
+Vec A n = μ (ℕ tt) (VecD A) n
+```
 
 ## notes
 
