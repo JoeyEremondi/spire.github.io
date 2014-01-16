@@ -8,7 +8,7 @@ categories:
 ---
 
 Before jumping straight into implementing datatypes via descriptions,
-it is convient to be able model some them in Agda (as done in
+it is convient to be able model some of them in Agda (as done in
 [The Gentle Art of Levitation](http://gallium.inria.fr/~pdagand/papers/levitation.pdf)
 by Chapman et. al.
 and subsequent papers). Everything in the surface language, such as
@@ -43,7 +43,7 @@ in a comment, for features that Agda does not support)
 3. Typecheck and study the resulting core type theory terms
 
 Elaboration of a high level term can involve many steps that
-individually are easy to follow, but produce a complex final term, and
+are individually easy to follow, but produce a complex final term, and
 it is worth considering alternative core type theory constructs to
 produce simpler final terms. These sorts of before-and-after pictures,
 and most concepts in this post, can be found in
@@ -95,7 +95,7 @@ a moderatley complicated dependent type, but only eliminates type
 families applied to a sequence of variables. Eliminating type families
 applied to expressions built from constructors requires more clever motive synthesis
 (via [Eliminating Dependent Pattern Matching](http://strictlypositive.org/goguen.pdf)
-by Goguen et. al.) that we would like to ignore for this first pass.
+by Goguen et. al.) that I would like to ignore for this first pass.
 
 ## Eliminators
 
@@ -192,7 +192,7 @@ Rather than using a standard eliminator on datatypes defined using
 descriptions, the special `ind` elimination rule is used. An
 eliminator has separate "branches" for each constructor of a datatype,
 along with proofs of the motive being satisfied at recursive positions
-in the costructor. Intead, `ind` has a single branch (called `pcon`
+in the constructor. Intead, `ind` has a single branch (called `pcon`
 below) that bundles up all branches of a typical eliminator, along
 with an `All` argument for all recursive motive proofs.
 
@@ -259,13 +259,13 @@ constructor arguments. Notice that we defined `ℕ` with an enumeration
 for the constructor arguments, but we did not do the same for `Vec`.
 `Example 7.46` in Dagand shows how to elaborate `Vec` into a description
 that has named constructor arguments. This involves first wrapping the
-description in an `elim` constructor identify `Vec` as a type defined
+description in an `elim` constructor to identify `Vec` as a type defined
 by computation over its index. Then, the `zero` and `suc` branches
 return `zero` and `suc` constructor tags respectively. In this case,
 the constructors index into singleton enumerations, i.e. `elim` into
 `[elim]`, `zero` into `[zero]`, and `suc` into `[suc]`. If we were
 defining a type that had multiple constructors with the same index for
-a particular index branch (i.e. `zero`) then the enumeration would not
+a particular index branch then the enumeration would not
 be a singleton, but it would still only be sub-enumeration of the
 total enumeration of constructors that we have in mind for the type.
 
@@ -275,7 +275,7 @@ enumeration, i.e. `zero` and `suc` index into `[zero, suc]`. Hence,
 although functions like `append` and `concat` defined above over
 computational description `Vec` look nice, once you add these
 singleton tags and desugar everything, you get lots of eliminations
-over singleton enumerations that are no longer as elegant.
+over singleton enumerations that are IMO no longer as elegant.
 Additionally, type families defined by computation over the index are
 only a subclass of all possible type families. The remaining types
 (and actually, all type families) can be alternatively defined by
@@ -291,7 +291,7 @@ define types, in practice once you add named constructors and perform
 elaboration of patterns to eliminators, I don't feel like they buy you
 enough for the additional complexity. I am content with supporting
 Agda-style propositionally defined datatypes exclusively. Given this
-decision, we can make change the grammar of descriptions to more
+decision, we can change the grammar of descriptions to more
 closely resemble the surface language Agda-style datatype
 declarations. I saw something like this alternative `Desc` definition
 from the code accompanying a
@@ -327,7 +327,7 @@ description argument at the end. Then `End`, formerly `⊤`, ends the
 this index value to ask for a propositionally equality proof, making
 sure that the index of the constructor you produce matches the index
 of the type you specified. This can be achieved in the previous `Desc`
-grammar by ending a descriptions with `Σ (x ≡ y) λ _ → ⊤`, but here
+grammar by ending a description with `Σ (x ≡ y) λ _ → ⊤`, but here
 that pattern is internalized. One pleasant consequence can be seen by
 looking at the `μ` datatype. It no longer requires a function from the
 index to a description, and now merely requires a description. Because
@@ -342,7 +342,7 @@ The `ℕ` datatype is declared pretty much the same as before. However,
 `Vec` is now given with its constructor names, and the index of a
 particular constructor is given at the end of the sequence of
 constructor arguments. Compare this to the Agda data declaration at
-the top the post and notice the similar structure.
+the top of the post and notice the similar structure.
 
 ``` haskell Propositional ℕ & Vec Declarations https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/PropositionalDesc.agda#L97-L122
   data ℕT : Set where `zero `suc : ℕT
@@ -415,9 +415,9 @@ concat A m = ind (ℕ tt) (VecD (Vec A m)) (λ n xss → Vec A (mult n m))
 ## Desugared Propositional Descriptions
 
 I will now show the desugared final forms of the propositional
-description code given so far. It is very important to studies these
+description code given so far. It is very important to study these
 terms carefully, as they are the terms of our canonical type theory
-and will appear as types everywhere throughout our language (as types
+and will appear as types everywhere throughout our language (because types
 are fully evaluated terms). 
 
 The first bit of sugar we will get rid of has to do with the pattern
@@ -583,8 +583,8 @@ concat A m = ind (ℕ tt) (VecD (Vec A m)) (λ n xss → Vec A (mult n m))
 ```
 
 Alternatively, rather than defining these functions with `ind`,
-`case`, and `subst` directly, we could reuse our former definitions by
-eliminators and intead define the eliminators in much the same way.
+`case`, and `subst` directly, we can define the eliminators using
+`ind` and reuse our former definitions that use eliminators.
 
 ``` haskell Desugared Eliminators https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/PropositionalDesc.agda#L298-L358
 elimℕ : (P : (ℕ tt) → Set)
@@ -660,7 +660,7 @@ gets much bigger! For example, the
 using `ind` is *2,195* lines long! This is a huge term, considering
 the
 [surface language source](https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/Standard.agda#L36-L50)
- for defining the types and values `add`, `mult`, `append`, and
+ for defining the types and values of `add`, `mult`, `append`, and
  `concat` is *14* lines long (the line count above only accounts for
  the value of concat by itself).
 
@@ -688,7 +688,9 @@ already broken up into values and spines. This allows for some
 bidirectional argument synthesis for values, but not for elimination
 rules. Breaking up the grammar further would allow for synthesis of
 arguments to elimination rules too, and the canonical type checker
-would remain relatively simple. Here is a file that adds some implicit
+would remain relatively simple.
+[Here is a file](https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/InferredPropositionalDesc.agda)
+that adds some implicit
 arguments to the definitions presented thus far that I believe could
 be synthesized. I didn't try that hard, so there is more room for
 making things more implicit, but that at least takes the
@@ -699,8 +701,9 @@ An interesting thing to notice is that the way elimination proceeds
 when writing definitions with `ind`, `case`, and `subst` is rather
 uniform. All definitions of datatypes can already be characterized as
 codes of a universe called `tagDesc` in Dagand `Definition 4.23`.
-Dagand programs over this universe to do generic programming. One form
-of that would be a specialized `indcase` definition to use `ind`, then
+Dagand programs over this universe to perform generic programming. One form
+of that would be a specialized `indcase` definition that automatically
+applies `ind`, then
 `case`, then maybe `subst` too. Ideally, I would like a generic
 `elim` function that computes the exact type signature expected from
 standard eliminators from each description. This basically involves
@@ -741,7 +744,7 @@ labelled type
 (see
 [The view from the left](http://strictlypositive.org/view.ps.gz)
 ) and ending the chain of sums in `⊥` on the right. This would still
-allow you to do generic programming, by having a list of tuples of
+allow you to perform generic programming by having a list of tuples of
 strings plus descriptions act as the universe of codes
 (just like `tagDesc`), which gets interpreted as a description,
 which gets interpreted as a sequence of sums of the form that I just
