@@ -2,7 +2,7 @@
 layout: post
 title: "Modeling Elimination of Described Types"
 author: Larry Diehl
-date: 2014-01-14 09:50:12 -0800
+date: 2014-01-15 09:50:12 -0800
 comments: true
 categories: 
 ---
