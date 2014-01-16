@@ -9,10 +9,9 @@
   <meta name="author" content="Spire">
 
   
-  <meta name="description" content="Since becoming a PhD student at Portland State,
-I&rsquo;ve been occasionally
-hacking on what is currently a rather
-boring type checker (by the name &hellip;">
+  <meta name="description" content="Before jumping straight into implementing datatypes via descriptions,
+it is convient to be able model some of them in Agda (as done in
+The Gentle Art &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -74,6 +73,60 @@ boring type checker (by the name &hellip;">
       
   <header>
     
+      <h1 class="entry-title"><a href="/blog/2014/01/15/modeling-elimination-of-described-types/">Modeling Elimination of Described Types</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-15T09:50:12-08:00" pubdate data-updated="true">Jan 15<span>th</span>, 2014</time>
+        
+           | <a href="/blog/2014/01/15/modeling-elimination-of-described-types/#disqus_thread"
+             data-disqus-identifier="http://spire-lang.org/blog/2014/01/15/modeling-elimination-of-described-types/">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Before jumping straight into implementing datatypes via descriptions,
+it is convient to be able model some of them in Agda (as done in
+<a href="http://gallium.inria.fr/~pdagand/papers/levitation.pdf">The Gentle Art of Levitation</a>
+by Chapman et. al.
+and subsequent papers). Everything in the surface language, such as
+datatype declarations and pattern matching, is elaborated to terms of
+the core type theory. It is desirable to have the ingredients of the
+core type theory be as similar to their higher level counterparts as
+possible, otherwise work on the canonical terms (such as embedding
+back upwards, generic programming on core terms, and compilation of
+core terms) becomes complex.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/01/15/modeling-elimination-of-described-types/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h1 class="entry-title"><a href="/blog/2014/01/05/an-unremarkable-type-checker/">An Unremarkable Type Checker</a></h1>
     
     
@@ -108,183 +161,12 @@ to become a dependently typed language for experimenting with generic
 programming. Development has been slow and sporadic, so for the new
 year I&rsquo;m going to try out this daily development blog.</p>
 
-<h2>Goals</h2>
-
-<p>My friend and colleague <a href="http://web.cecs.pdx.edu/~ntc2/">Nathan</a> is
-also hacking on it nowadays. The goals of the project are as follows:</p>
-
-<ul>
-<li>To help the implementors learn how a dependent type checker works.</li>
-<li>To end up with a platform for experimenting with dependently typed
-generic programming.</li>
-<li>To elaborate everything in the language to a core type theory.</li>
-<li>To formalize the type checker of the core type theory.</li>
-</ul>
-
-
-<p>For the most part, this comes down to implementing selective pieces of
-<a href="https://code.google.com/p/epigram/">Epigram</a>.
-More specifically, we&rsquo;re following a lot of what
-<a href="http://gallium.inria.fr/~pdagand/">Pierre Dagand</a> has wonderfully described
-in his
-<a href="http://gallium.inria.fr/~pdagand/stuffs/thesis-2011-phd/thesis.pdf">thesis</a>.</p>
-
-<h2>Project Structure</h2>
-
-<p>I experimented with a few different project structures, and my
-favorite ended up using a canonical type theory for the core along
-with hereditary substitution. I learned about hereditary substitution
-from a beautiful paper describing how to formalize termination of
-evaluation for the STLC by
-<a href="http://www.cs.nott.ac.uk/~txa/publ/msfp10.pdf">Keller and Alternkirch</a>.
-The technique originally came out work on the metatheory of LF/Twelf.
-<a href="http://www.cs.cmu.edu/~cmartens/lfinlf.pdf">Martens and Crary</a> have a
-nice modern paper on how to use this to formalize LF in LF.</p>
-
-<p>In a canonical type theory your terms are grammatically enforced to be
-in β-normal form. This has a number of desirable consequences, for
-instance:</p>
-
-<ul>
-<li>Big-step semantics (evaluation) can go from expressions to canonical
-terms, ensuring that you did not forget to reduce any β-redex.</li>
-<li>A type-checking function checks expressions against reduced
-types. If the reduced types are canonical terms, you don&rsquo;t need to
-check for and throw errors due to expressions containing redexes.</li>
-<li>Other algorithms, such as unification, also benefit from operating
-on canonical terms, especially if they are in spine form where the
-variable that eliminators are stuck on is easily accessible. For
-instance,
-<a href="https://personal.cis.strath.ac.uk/adam.gundry/thesis/">Adam Gundry</a>
-implements his dependently typed unification this way.</li>
-</ul>
-
-
-<p>Because so many algorithms in a dependently typed language take or
-return redex-free terms, having a canonical type theory makes things
-easier and less error prone. Canonical terms are no
-longer closed under substitution, hence <em>hereditary substitution</em>
-evaluates as it substitutes to remove redexes.</p>
-
-<p>I originally tried to implement canonical Spire in Agda, extending
-Keller and Altenkirch&rsquo;s typed STLC terms to dependent types. In Twelf
-the canonical type theory even makes termination of hereditary
-substitution immediate. However, Twelf&rsquo;s termination argument does not
-easily extend to dependent type theory with
-large eliminations (functions that return types). Even if you turn off
-the termination checker, getting the rest of the definitions to type
-check is difficult because of the multitude of mutual definitions.
-<a href="https://github.com/spire/spire/blob/master/formalization/agda/Spire/Operational.agda">Here is a file</a>
-that postulates the hereditary substitution function, but still
-defines all the other semantic functions that would be used when
-implementing hereditary substitution. Somewhere on my hard drive
-exists a stuck attempt at defining substitution where I ran into
-trouble with all the mutual definitions.</p>
-
-<p>In any case, making the typed-syntax above pass type checking would
-still leave the open problem of termination. Instead, Spire is
-implemented in Haskell with untyped syntax and a partial (monadic)
-hereditary substitution semantics. I&rsquo;m working on trying to prove
-termination of this untyped semantics in Agda, which is easier due to not
-having so many mutual definitions, and many future blog posts will
-cover my slow progress on that front.</p>
-
-<h2>Where Were We?</h2>
-
-<p>Ah yes, so the project structure of Spire. The idea is to have a
-surface syntax of high-level constructs and expressions that
-elaborates to the closed core type theory. This idea is the hallmark of
-Epigram. Examples of this include Conor McBride&rsquo;s work on
-<a href="http://strictlypositive.org/goguen.pdf">compiling dependent pattern matching to eliminators</a>,
-and Pierre Dagand&rsquo;s work on compiling
-<a href="http://gallium.inria.fr/~pdagand/stuffs/paper-2012-data-jfla/paper.pdf">data declarations to descriptions</a>.
-Dagand&rsquo;s
-<a href="http://gallium.inria.fr/~pdagand/stuffs/thesis-2011-phd/thesis.pdf">thesis</a>
-describes this process well. A minor difference is that we are
-elaborating to canonical terms rather than a core theory that includes
-expressions. The metatheorem for soundness of elaboration described
-by Dagand corresponds to type preservation: After elaboration of a
-well-typed surface term, you get a well-typed core term. In the
-eventually formalized Spire canonical type theory, this will be
-proven. In the current Haskell version, this is
-<a href="https://github.com/spire/spire/blob/f948548c4b5793fdc042989404f4aad49a5015cc/src/Spire/Pipeline.hs#L29">dynamically checked</a>
-rather than proven.</p>
-
-<p>Spire is currently split into 3 languages. The top language called
-<a href="https://github.com/spire/spire/blob/f948548c4b5793fdc042989404f4aad49a5015cc/src/Spire/Surface/Types.hs">Surface</a>
-is what the user programs in. Elaboration from surface proceeds to
-<a href="https://github.com/spire/spire/blob/f948548c4b5793fdc042989404f4aad49a5015cc/src/Spire/Expression/Types.hs">Expression</a>.
-Expressions are like surface terms, but contain a two-part bidirectional
-syntax. Other syntactical elaborations (those that need not be type directed) will also be performed here
-in the future. Nathan has been working on the implicit arguments front
-of the project, and Spire currently supports wildcard arguments.
-Elaboration from Syntax to Expression also removes wildcards and
-introduces metavariables into the context. In the future Surface will
-contain other high-level constructrs like data declarations and
-pattern matching syntax. Eloboration proceeds from expressions to
-<a href="https://github.com/spire/spire/blob/master/src/Spire/Canonical/Types.hs">Canonical</a>
-terms. This performs type checking, introduces and solves unification
-problems, and removes β-redexes. To keep the canonical terms smaller,
-we only require them to be checkable rather than
-inferrable/synthesizable. Canonical terms can be checked
-bidirectionally, as they are already grammatically split into Values
-and neutrals/spines. This works so long as every eliminator only
-eliminates something inferred and the rest of the arguments are
-checkable. A counter-example of this is the <code>if</code>-statement helper in
-Expression. Therein the types of the two branches need to be inferred
-rather than checked, but <code>if</code> appears as a specialized <code>elimBool</code> in
-the canonical theory (once we have full implicit argument support,
-<code>if</code> can go away in expressions too, but this is a nice example of what
-would break bidirectional canonical type checking). Finally,
-there are embedding functions to go back up the chain of languages. Another
-<a href="https://github.com/spire/spire/blob/f948548c4b5793fdc042989404f4aad49a5015cc/src/Spire/Pipeline.hs#L30">metatheorem</a>
-that appears as a dynamic check in Spire is: if you evaluate a
-well-typed term to a canonical, then embed it back up to a surface
-term and evaluate it again, you get back the same canonical term. This
-becomes more important as the surface and canonical languages diverge
-more. Embedding is used to pretty-print canonicals after evaluation,
-for example in error messages. Although messing up embedding does not
-affect consistency, as a practical matter it would confuse the user if
-type errors contained the wrong terms due to embedding bugs!</p>
-
-<h3>Implicit Arguments</h3>
-
-<p>The implicit argument work by Nathan (I&rsquo;ll ask him if he wants to
-describe it) was inspired by <a href="http://arxiv.org/abs/1202.4905">Asperti et. al.&rsquo;s Matita work</a>
-and somewhat by
-<a href="http://eb.host.cs.st-andrews.ac.uk/drafts/impldtp.pdf">Edwin Brady&rsquo;s Idris work</a>. It
-relies on the higher-order unification algorithm and library by
-<a href="https://github.com/adamgundry/type-inference">Gundry</a>, and currently
-translates between Spire terms and Gundry terms.</p>
-
-<h3>Substitution &amp; Binding</h3>
-
-<p>With something like NbE in
-<a href="http://www.andres-loeh.de/LambdaPi/">Lambda Pi</a>
-you get to inherit  binding
-structure and substitution from the meta-language. In Spire binding must be implemented
-directly, but thanks to the
-<a href="http://hackage.haskell.org/package/unbound">Unbound</a> library a lot of
-this can be automated. We also added a
-<a href="https://github.com/spire/substM">monadic extension</a>
-that makes it possible to
-use Unbound for hereditary substitution, used like
-<a href="https://github.com/spire/spire/blob/f948548c4b5793fdc042989404f4aad49a5015cc/src/Spire/Canonical/Evaluator.hs#L23">this</a>
-in Spire.</p>
-
-<h2>Wrapping Up</h2>
-
-<p>My near term next steps are going to be adding <code>Desc</code>riptions and implementing Dagand&rsquo;s data
-declaration elaboration work, as well as working on trying to
-formalize termination of Spire&rsquo;s canonical theory. We&rsquo;re leaving
-type-in-type in the Haskell code for now, as I&rsquo;m
-<a href="https://github.com/larrytheliquid/leveling-up">comfortable enough</a>
-with universe hierarchies now to add them later (famous last words).
-That&rsquo;s it for now folks, see you tomorrow with the start of a nice new
-term. Also, Nathan and I have started to idle in <code>#spire-lang</code> on
-<code>freenode</code>, so feel free to idle alongside us.</p>
 </div>
   
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/01/05/an-unremarkable-type-checker/">Read on &rarr;</a>
+    </footer>
   
 
 
@@ -301,6 +183,10 @@ term. Also, Nathan and I have started to idle in <code>#spire-lang</code> on
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/01/15/modeling-elimination-of-described-types/">Modeling Elimination of Described Types</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/01/05/an-unremarkable-type-checker/">An Unremarkable Type Checker</a>

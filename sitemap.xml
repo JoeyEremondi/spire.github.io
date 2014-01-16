@@ -2,15 +2,19 @@
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
         <loc>http://spire-lang.org/blog/2014/01/05/an-unremarkable-type-checker/</loc>
-        <lastmod>2014-01-11T21:35:39-08:00</lastmod>
+        <lastmod>2014-01-14T15:22:52-08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://spire-lang.org/blog/2014/01/15/modeling-elimination-of-described-types/</loc>
+        <lastmod>2014-01-15T18:33:08-08:00</lastmod>
     </url>
     <url>
         <loc>http://spire-lang.org/blog/archives/</loc>
-        <lastmod>2014-01-11T21:35:39-08:00</lastmod>
+        <lastmod>2014-01-15T18:33:08-08:00</lastmod>
     </url>
     <url>
         <loc>http://spire-lang.org/</loc>
-        <lastmod>2014-01-11T21:35:39-08:00</lastmod>
+        <lastmod>2014-01-15T18:33:08-08:00</lastmod>
     </url>
     <url>
         <loc>http://spire-lang.org/robots.txt</loc>
