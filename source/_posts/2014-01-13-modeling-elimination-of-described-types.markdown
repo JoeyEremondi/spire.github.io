@@ -52,7 +52,7 @@ and most concepts in this post, can be found in
 ## Note
 
 All of the code from this post can be
-[found in Spire](https://github.com/spire/spire/tree/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples).
+[found in Spire](https://github.com/spire/spire/tree/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples).
 Additionally, each code snippet contains a link to the specific file
 in the **top right corner**.
 
@@ -62,7 +62,7 @@ When first implementing the `Desc`ription technology, it will be
 convenient to have a sufficiently complex example to typecheck. The
 following standard sequence of types and functions suits this goal.
 
-``` haskell Functions using Pattern Matching https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/Standard.agda#L34-L52
+``` haskell Functions using Pattern Matching https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/Standard.agda#L34-L52
 data ℕ : Set where
   zero : ℕ
   suc : (n : ℕ) → ℕ
@@ -104,7 +104,7 @@ Because we only eliminate type families applied to a sequence
 of variables, the branch functions supplied to the eliminator look like
 pattern matching, and the whole definition is rather compact.
 
-``` haskell Functions using Eliminators https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/Standard.agda#L54-L76
+``` haskell Functions using Eliminators https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/Standard.agda#L54-L76
 add : ℕ → ℕ → ℕ
 add = elimℕ (λ _ → ℕ → ℕ)
   (λ n → n)
@@ -133,7 +133,7 @@ Now we will consider `Desc`riptions as they appear in
 which are the core type theory analogue to surface language datatype
 definitions. 
 
-``` haskell Computational Description Datatypes https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/ComputationalDesc.agda#L19-L20
+``` haskell Computational Description Datatypes https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/ComputationalDesc.agda#L19-L20
 data Desc (I : Set) : Set₁ where
   `⊤ : Desc I
   `X : (i : I) → Desc I
@@ -154,7 +154,7 @@ whose domain is some finite collection. To encode a type such as `ℕ`,
 we can use a `Σ` whose domain is an index into an enumeration of the
 contructor names `zero` and `suc`.
 
-``` haskell Computational ℕ Declaration https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/ComputationalDesc.agda#L57-L67
+``` haskell Computational ℕ Declaration https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/ComputationalDesc.agda#L57-L67
 data ℕT : Set where `zero `suc : ℕT
 
 ℕD : ⊤ → Desc ⊤
@@ -177,7 +177,7 @@ particularly nice reduction behaviour, buying you free equations
 thanks to definitional equality. `ℕ` was not indexed, but below is an
 example of defining `Vec` as a computational description.
 
-``` haskell Computational Vec Declaration https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/ComputationalDesc.agda#L77-L82
+``` haskell Computational Vec Declaration https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/ComputationalDesc.agda#L77-L82
 data VecT : Set where `nil `cons : VecT
 
 VecD : (A : Set) (n : ℕ tt) → Desc (ℕ tt)
@@ -196,7 +196,7 @@ in the costructor. Intead, `ind` has a single branch (called `pcon`
 below) that bundles up all branches of a typical eliminator, along
 with an `All` argument for all recursive motive proofs.
 
-``` haskell ind Elimination Rule Type https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/ComputationalDesc.agda#L30-L37
+``` haskell ind Elimination Rule Type https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/ComputationalDesc.agda#L30-L37
 ind :
   (I : Set)
   (R : I → Desc I)
@@ -215,7 +215,7 @@ constructor pattern match clause are desugared into projections on the
 right hand side. We will see what the final desugared terms look like
 later in this post.
 
-``` haskell Computational Desc Functions https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/ComputationalDesc.agda#L92-L124
+``` haskell Computational Desc Functions https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/ComputationalDesc.agda#L92-L124
 add : ℕ tt → ℕ tt → ℕ tt
 add = ind ⊤ ℕD (λ _ _ → ℕ tt → ℕ tt)
   (λ
@@ -298,7 +298,7 @@ from the code accompanying a
 [blog post](http://perso.ens-lyon.fr/guillaume.allais/?en/main/blog/read/syntax-binding-run-omega) 
 by Guillaume Allais.
 
-``` haskell Propositional Description Datatypes https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/PropositionalDesc.agda#L38-L54
+``` haskell Propositional Description Datatypes https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/PropositionalDesc.agda#L38-L54
 data Desc (I : Set) : Set₁ where
   `End : (i : I) → Desc I
   `Rec : (i : I) (D : Desc I) → Desc I
@@ -344,7 +344,7 @@ particular constructor is given at the end of the sequence of
 constructor arguments. Compare this to the Agda data declaration at
 the top the post and notice the similar structure.
 
-``` haskell Propositional ℕ & Vec Declarations https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/PropositionalDesc.agda#L97-L122
+``` haskell Propositional ℕ & Vec Declarations https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/PropositionalDesc.agda#L97-L122
   data ℕT : Set where `zero `suc : ℕT
   data VecT : Set where `nil `cons : VecT
 
@@ -376,7 +376,7 @@ substitution. Specifically, this elaboration is the `solution` step of
 `Lemma 16` in
 [Eliminating Dependent Pattern Matching](http://strictlypositive.org/goguen.pdf).
 
-``` haskell Propositional Desc Functions https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/PropositionalDesc.agda#L132-L164
+``` haskell Propositional Desc Functions https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/PropositionalDesc.agda#L132-L164
 add : ℕ tt → ℕ tt → ℕ tt
 add = ind ⊤ ℕD (λ _ _ → ℕ tt → ℕ tt)
   (λ
@@ -431,7 +431,7 @@ position/name. I've renamed these contstructs, and their original
 names in Dagand are `EnumU`, `EnumT`, `π`, and `switch` and can be
 found in `Definition 2.49` and `Definition 2.52`.
 
-``` haskell Enum & Tag https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/PropositionalDesc.agda#L18-L34
+``` haskell Enum & Tag https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/PropositionalDesc.agda#L18-L34
 Label : Set
 Label = String
 
@@ -458,7 +458,7 @@ In the sugared version of descriptions for datatypes we match on a tag
 and return a description for it. In the desugared version, we instead
 eliminate a tag with the special `case` elimination rule.
 
-``` haskell Desugared ℕ & Vec Declarations https://github.com/spire/spire/blob/45961700e57999602f8fedceb758b41ac3a176f3/formalization/agda/Spire/Examples/PropositionalDesc.agda#L170-L206
+``` haskell Desugared ℕ & Vec Declarations https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/PropositionalDesc.agda#L170-L206
 ℕT : Enum
 ℕT = "zero" ∷ "suc" ∷ []
 
@@ -492,13 +492,268 @@ Vec : (A : Set) (n : ℕ tt) → Set
 Vec A n = μ (ℕ tt) (VecD A) n
 ```
 
-## notes
+Now brace yourself for the rather wordy desugared version of our
+series of function definitions. The general pattern for these is that
+we first use `ind` on the datatype being eliminated (like before),
+then we use `case` to give a branch for each constructor. Because
+`case` eliminates a tag out of the domain of a dependent pair,
+we must use the
+[convoy pattern](http://adam.chlipala.net/cpdt/html/MoreDep.html)
+to have the codomain properly unfold. As mentioned before, "matching" on
+our propositional equality proof is done by applying `subst`. Finally,
+each argument to a constructor is referenced by its projection out of
+the tuple of arguments you actually get out of the constructor.
 
-at the heart of the annoyance is the fact that the type of con in Mu
-is a tuple domain and Mu codomain, rather than the curried version of
-all functions
+``` haskell Desugared Desc Functions https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/PropositionalDesc.agda#L218-L292
+add : ℕ tt → ℕ tt → ℕ tt
+add = ind ⊤ ℕD (λ _ _ → ℕ tt → ℕ tt)
+  (λ u t,c → case ℕT
+    (λ t → (c : El ⊤ (ℕC t) ℕ u)
+           (ih : All ⊤ ℕD ℕ (λ u n → ℕ u → ℕ u) u (t , c))
+           → ℕ u → ℕ u
+    )
+    ( (λ q ih n → n)
+    , (λ m,q ih,tt n → suc (proj₁ ih,tt n))
+    , tt
+    )
+    (proj₁ t,c)
+    (proj₂ t,c)
+  )
+  tt
 
-show ind and nice vec definitions, but then mention that not all defs
-can be written like this, and higher order, and would rather be more
-similiar to agda for now, and gets nastier when tagging constructors
-like in dagand thesis example
+mult : ℕ tt → ℕ tt → ℕ tt
+mult = ind ⊤ ℕD (λ _ _ → ℕ tt → ℕ tt)
+  (λ u t,c → case ℕT
+    (λ t → (c : El ⊤ (ℕC t) ℕ u)
+           (ih : All ⊤ ℕD ℕ (λ u n → ℕ u → ℕ u) u (t , c))
+           → ℕ u → ℕ u
+    )
+    ( (λ q ih n → zero)
+    , (λ m,q ih,tt n → add n (proj₁ ih,tt n))
+    , tt
+    )
+    (proj₁ t,c)
+    (proj₂ t,c)
+  )
+  tt
+
+append : (A : Set) (m : ℕ tt) (xs : Vec A m) (n : ℕ tt) (ys : Vec A n) → Vec A (add m n) 
+append A = ind (ℕ tt) (VecD A) (λ m xs → (n : ℕ tt) (ys : Vec A n) → Vec A (add m n))
+  (λ m t,c → case VecT
+    (λ t → (c : El (ℕ tt) (VecC A t) (Vec A) m)
+           (ih : All (ℕ tt) (VecD A) (Vec A) (λ m xs → (n : ℕ tt) (ys : Vec A n) → Vec A (add m n)) m (t , c))
+           (n : ℕ tt) (ys : Vec A n) → Vec A (add m n)
+    )
+    ( (λ q ih n ys → subst (λ m → Vec A (add m n)) q ys)
+    , (λ m',x,xs,q ih,tt n ys →
+        let m' = proj₁ m',x,xs,q
+            x = proj₁ (proj₂ m',x,xs,q)
+            q = proj₂ (proj₂ (proj₂ m',x,xs,q))
+            ih = proj₁ ih,tt
+        in
+        subst (λ m → Vec A (add m n)) q (cons A (add m' n) x (ih n ys))
+      )
+    , tt
+    )
+    (proj₁ t,c)
+    (proj₂ t,c)
+  )
+
+concat : (A : Set) (m n : ℕ tt) (xss : Vec (Vec A m) n) → Vec A (mult n m)
+concat A m = ind (ℕ tt) (VecD (Vec A m)) (λ n xss → Vec A (mult n m))
+  (λ n t,c → case VecT
+    (λ t → (c : El (ℕ tt) (VecC (Vec A m) t) (Vec (Vec A m)) n)
+           (ih : All (ℕ tt) (VecD (Vec A m)) (Vec (Vec A m)) (λ n xss → Vec A (mult n m)) n (t , c))
+           → Vec A (mult n m)
+    )
+    ( (λ q ih → subst (λ n → Vec A (mult n m)) q (nil A))
+    , (λ n',xs,xss,q ih,tt →
+        let n' = proj₁ n',xs,xss,q
+            xs = proj₁ (proj₂ n',xs,xss,q)
+            q = proj₂ (proj₂ (proj₂ n',xs,xss,q))
+            ih = proj₁ ih,tt
+        in
+        subst (λ n → Vec A (mult n m)) q (append A m xs (mult n' m) ih)
+      )
+    , tt
+    )
+    (proj₁ t,c)
+    (proj₂ t,c)
+  )
+```
+
+Alternatively, rather than defining these functions with `ind`,
+`case`, and `subst` directly, we could reuse our former definitions by
+eliminators and intead define the eliminators in much the same way.
+
+``` haskell Desugared Eliminators https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/PropositionalDesc.agda#L298-L358
+elimℕ : (P : (ℕ tt) → Set)
+  (pzero : P zero)
+  (psuc : (m : ℕ tt) → P m → P (suc m))
+  (n : ℕ tt)
+  → P n
+elimℕ P pzero psuc = ind ⊤ ℕD (λ u n → P n)
+  (λ u t,c → case ℕT
+    (λ t → (c : El ⊤ (ℕC t) ℕ u)
+           (ih : All ⊤ ℕD ℕ (λ u n → P n) u (t , c))
+           → P (con (t , c))
+    )
+    ( (λ q ih →
+        elimEq ⊤ tt (λ u q → P (con (here , q)))
+          pzero
+          u q
+      )
+    , (λ n,q ih,tt →
+        elimEq ⊤ tt (λ u q → P (con (there here , proj₁ n,q , q)))
+          (psuc (proj₁ n,q) (proj₁ ih,tt))
+          u (proj₂ n,q)
+      )
+    , tt
+    )
+    (proj₁ t,c)
+    (proj₂ t,c)
+  )
+  tt
+
+elimVec : (A : Set) (P : (n : ℕ tt) → Vec A n → Set)
+  (pnil : P zero (nil A))
+  (pcons : (n : ℕ tt) (a : A) (xs : Vec A n) → P n xs → P (suc n) (cons A n a xs))
+  (n : ℕ tt)
+  (xs : Vec A n)
+  → P n xs
+elimVec A P pnil pcons = ind (ℕ tt) (VecD A) (λ n xs → P n xs)
+  (λ n t,c → case VecT
+    (λ t → (c : El (ℕ tt) (VecC A t) (Vec A) n)
+           (ih : All (ℕ tt) (VecD A) (Vec A) (λ n xs → P n xs) n (t , c))
+           → P n (con (t , c))
+    )
+    ( (λ q ih →
+        elimEq (ℕ tt) zero (λ n q → P n (con (here , q)))
+          pnil
+          n q
+      )
+    , (λ n',x,xs,q ih,tt →
+        let n' = proj₁ n',x,xs,q
+            x = proj₁ (proj₂ n',x,xs,q)
+            xs = proj₁ (proj₂ (proj₂ n',x,xs,q))
+            q = proj₂ (proj₂ (proj₂ n',x,xs,q))
+            ih = proj₁ ih,tt
+        in
+        elimEq (ℕ tt) (suc n') (λ n q → P n (con (there here , n' , x , xs , q)))
+          (pcons n' x xs ih )
+          n q
+      )
+    , tt
+    )
+    (proj₁ t,c)
+    (proj₂ t,c)
+  )
+```
+
+## An Avalanche of Canonical Terms
+
+We have already seen how large the desugared code gets in the previous
+section. Unfortunately, if you evaluate this code to canonical form it
+gets much bigger! For example, the 
+[canonical term](https://gist.github.com/larrytheliquid/8447251#file-propositionaldescinductionconcat-agda)
+ for `concat` defined
+using `ind` is *2,195* lines long! This is a huge term, considering
+the
+[surface language source](https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/Standard.agda#L36-L50)
+ for defining the types and values `add`, `mult`, `append`, and
+ `concat` is *14* lines long (the line count above only accounts for
+ the value of concat by itself).
+
+
+Some negative consequences of large canonical terms include:
+
+* Computational overhead type checking expressions against these
+canonical types.
+* Computational overhead embedding/pretty-printing these canonical
+terms.
+* Memory overhead in type checking and embedding/pretty-printing.
+* Readability of canonical terms for developers while debugging.
+
+Some of this explosion in size comes from using eliminators instead of
+dependent pattern matching, where the motive must be supplied
+explicitly. Some more comes from the fact that a `μ` representing a
+type is applied to its description, which may be large, so anywhere
+the type appears the whole description is duplicated.
+
+I haven't thought that much about solutions to this large term problem
+yet, but I can imagine a few. I don't want to perform implicit
+argument search and unification in the canonical type theory because
+it complicates it too much. However, the current canonical grammar is
+already broken up into values and spines. This allows for some
+bidirectional argument synthesis for values, but not for elimination
+rules. Breaking up the grammar further would allow for synthesis of
+arguments to elimination rules too, and the canonical type checker
+would remain relatively simple. Here is a file that adds some implicit
+arguments to the definitions presented thus far that I believe could
+be synthesized. I didn't try that hard, so there is more room for
+making things more implicit, but that at least takes the
+[line count](https://gist.github.com/larrytheliquid/8447251#file-inferredpropositionaldescinductionconcat-agda)
+down to *1,411*.
+
+An interesting thing to notice is that the way elimination proceeds
+when writing definitions with `ind`, `case`, and `subst` is rather
+uniform. All definitions of datatypes can already be characterized as
+codes of a universe called `tagDesc` in Dagand `Definition 4.23`.
+Dagand programs over this universe to do generic programming. One form
+of that would be a specialized `indcase` definition to use `ind`, then
+`case`, then maybe `subst` too. Ideally, I would like a generic
+`elim` function that computes the exact type signature expected from
+standard eliminators from each description. This basically involves
+additionally doing some currying/uncurrying to pack/unpack values out of the tuple
+produced by the interpretation function for descriptions. As we have
+seen, programming definitions using the interface exposed by
+eliminators leads to
+[pretty short code](https://github.com/spire/spire/blob/b4f467da96d5de9050f58b41ac10fd9a73ac84df/formalization/agda/Spire/Examples/Standard.agda#L56-L74).
+The motive is still there and descriptions are still duplicated in
+every occurrence of `μ`, but we need to win this war by winning many
+battles. However, even if you programmed this generic `elim` function
+within the language, the canonical term it produces would be just as
+big. It may be necessary to add `elim` as a canonical term primitive
+instead, and we may not even need the more general `ind` or `case` if
+our language never produces code in the more general form where `ind`
+or `case` would be necessary.
+
+Another technique might be to avoid expanding definitions where
+possible. For example, if you have a unique hash represent the
+description for a type, then testing the equality of terms using the
+same hash value would work. However, I would need to be careful to
+evaluate that hash to a concrete term during type checking,
+a form of lazy evaluation. Memoization of previously type-checked
+terms, and equality comparisons, would help a lot too because there
+are a lot of duplicated terms.
+
+## Sums
+
+Using a tag that indexes into an enumeration as the domain of a
+dependent pair type is isomorphic to using a `Sum` type. This
+alternative approach is taken by Bob Atkey in
+[Foveran](https://github.com/bobatkey/foveran). Well, the isomorphism
+is almost there. A tag for an enumeration lets you have named sums,
+used because we care about the name of our constructors. There are a
+variety of ways to accomplish this with sums, like making a new
+sum-like type, or always making the first type of a sum be a 
+labelled type
+(see
+[The view from the left](http://strictlypositive.org/view.ps.gz)
+) and ending the chain of sums in `⊥` on the right. This would still
+allow you to do generic programming, by having a list of tuples of
+strings plus descriptions act as the universe of codes
+(just like `tagDesc`), which gets interpreted as a description,
+which gets interpreted as a sequence of sums of the form that I just
+described. There are a number of pros and cons between the tag and sum
+approach that I should study more closely, but I think a lot of the
+duplication issues would come up in either case. 
+
+## Later
+
+That wraps up this week's blog post. I think a weekly schedule is good
+for this kind of development blog, as it gives me enough time to come
+up with material worth blogging about and enough time for interested
+readers to keep up.
+
+
