@@ -1,23 +1,33 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
-    <url>
-        <loc>http://spire-lang.org/blog/2014/01/05/an-unremarkable-type-checker/</loc>
-        <lastmod>2014-01-14T15:22:52-08:00</lastmod>
-    </url>
-    <url>
-        <loc>http://spire-lang.org/blog/2014/01/15/modeling-elimination-of-described-types/</loc>
-        <lastmod>2014-01-15T18:33:08-08:00</lastmod>
-    </url>
-    <url>
-        <loc>http://spire-lang.org/blog/archives/</loc>
-        <lastmod>2014-01-15T18:33:08-08:00</lastmod>
-    </url>
-    <url>
-        <loc>http://spire-lang.org/</loc>
-        <lastmod>2014-01-15T18:33:08-08:00</lastmod>
-    </url>
-    <url>
-        <loc>http://spire-lang.org/robots.txt</loc>
-        <lastmod>2014-01-11T21:35:39-08:00</lastmod>
-    </url>
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  
+  <url>
+    <loc>http://spire-lang.org/blog/2014/01/15/modeling-elimination-of-described-types/</loc>
+    <lastmod>2014-01-15T09:50:12-08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://spire-lang.org/blog/2014/01/05/an-unremarkable-type-checker/</loc>
+    <lastmod>2014-01-05T15:03:57-08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  
+  <url>
+    <loc>http://spire-lang.org/blog/archives/</loc>
+    <lastmod>2014-08-05T00:10:38-07:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>http://spire-lang.org/</loc>
+    <lastmod>2014-08-05T00:10:38-07:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  
 </urlset>
