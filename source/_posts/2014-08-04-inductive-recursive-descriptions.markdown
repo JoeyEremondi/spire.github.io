@@ -48,9 +48,9 @@ as well as subtle differences from the original encoding by Dybjer and
 Setzer encoding, as reviewed by
 [Malatesta et. al.](https://personal.cis.strath.ac.uk/conor.mcbride/pub/SmallIR/SmallIR.pdf).
 * __Has an induction principle.__
-The induction principle for datatypes encoded in the IR literature is
-typically given, but elimination principles are only sometimes given.
-I also wanted a principle in the style of the description literature.
+The induction principle for encoded datatypes is typically given in
+the description literature, but this is not always the case in the IR
+literature. I also wanted an induction principle in the style of the description literature.
 
 ## Non-Indexed Inductive-Recursive Descriptions
 
