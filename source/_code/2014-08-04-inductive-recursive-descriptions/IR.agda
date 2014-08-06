@@ -10,15 +10,21 @@ module IR where
 
 ----------------------------------------------------------------------
 
+data W (A : Set) (B : A → Set) : Set where
+  sup : (a : A) (t : B a → W A B) → W A B
+
 mutual
   data Lang : Set where
-    Nat : Lang
-    Sg Pi : (A : Lang) (B : ⟦ A ⟧ → Lang) → Lang
+    Zero One Two : Lang
+    Pair Fun Tree : (A : Lang) (B : ⟦ A ⟧ → Lang) → Lang
   
   ⟦_⟧ : Lang → Set
-  ⟦ Nat ⟧ = ℕ
-  ⟦ Sg A B ⟧ = Σ ⟦ A ⟧ λ a → ⟦ B a ⟧
-  ⟦ Pi A B ⟧ = (a : ⟦ A ⟧) → ⟦ B a ⟧
+  ⟦ Zero ⟧ = ⊥
+  ⟦ One ⟧ = ⊤
+  ⟦ Two ⟧ = Bool
+  ⟦ Pair A B ⟧ = Σ ⟦ A ⟧ λ a → ⟦ B a ⟧
+  ⟦ Fun A B ⟧ = (a : ⟦ A ⟧) → ⟦ B a ⟧
+  ⟦ Tree A B ⟧ = W ⟦ A ⟧ λ a → ⟦ B a ⟧
 
 ----------------------------------------------------------------------
 
@@ -26,23 +32,23 @@ sum : (n : ℕ) (f : Fin n → ℕ) → ℕ
 sum zero f = zero
 sum (suc n) f = f zero + sum n (f ∘ suc)
 
-prod : (n : ℕ)(f : Fin n → ℕ) → ℕ
+prod : (n : ℕ) (f : Fin n → ℕ) → ℕ
 prod zero f = suc zero
 prod (suc n) f = f zero * prod n (f ∘ suc)
 
 mutual
   data Arith : Set where
-    Nat : ℕ → Arith
-    Sg : (A : Arith) (f : Fin (eval A) → Arith) → Arith
-    Pi : (A : Arith) (f : Fin (eval A) → Arith) → Arith
+    Num : ℕ → Arith
+    Sum : (A : Arith) (f : Fin (eval A) → Arith) → Arith
+    Prod : (A : Arith) (f : Fin (eval A) → Arith) → Arith
 
   eval : Arith → ℕ
-  eval (Nat n) = n
-  eval (Sg A f) = sum (eval A) λ a → sum (toℕ a) λ b → eval (f (inject b))
-  eval (Pi A f) = prod (eval A) λ a → sum (toℕ a) λ b → eval (f (inject b))
+  eval (Num n) = n
+  eval (Sum A f) = sum (eval A) λ a → sum (toℕ a) λ b → eval (f (inject b))
+  eval (Prod A f) = prod (eval A) λ a → sum (toℕ a) λ b → eval (f (inject b))
 
 sum-lt-5 : Arith
-sum-lt-5 = Sg (Nat 5) λ a → Nat (toℕ a)
+sum-lt-5 = Sum (Num 5) λ a → Num (toℕ a)
 
 test-eval : eval sum-lt-5 ≡ 10
 test-eval = refl
