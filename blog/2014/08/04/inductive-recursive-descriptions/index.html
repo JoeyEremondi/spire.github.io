@@ -1,0 +1,726 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Inductive-Recursive Descriptions - Spire Language Development Blog</title>
+  <meta name="author" content="Larry Diehl">
+
+  
+  <meta name="description" content="This post is about adapting descriptions, used to encode dependently typed
+datatypes (including type families) originally in
+The Gentle Art of &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://spire-lang.org/blog/2014/08/04/inductive-recursive-descriptions">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Spire Language Development Blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Spire Language Development Blog</a></h1>
+  
+    <h2>Implementing a language with dependent types!</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:spire-lang.org" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Inductive-Recursive Descriptions</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-04T19:52:32-07:00" pubdate data-updated="true">Aug 4<sup>th</sup>, 2014</time>
+        
+           | <a href="#disqus_thread"
+             data-disqus-identifier="http://spire-lang.org">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>This post is about adapting descriptions, used to encode dependently typed
+datatypes (including type families) originally in
+<a href="http://gallium.inria.fr/~pdagand/papers/levitation.pdf">The Gentle Art of Levitation</a>,
+to inductive-recursive types.</p>
+
+<!-- more -->
+
+
+<h2>Goals</h2>
+
+<p>There have been many encodings of [indexed] inductive-recursive types,
+but as I developed Spire I came to desire an encoding that satisfied all
+of the following criteria:</p>
+
+<ul>
+<li><strong>Is universe-polymorphic.</strong> Although it&rsquo;s not hard to add universe
+levels, it is crucial for an actual language implementation. Nevertheless, most
+papers (justifiably) abstain from cluttering their presentation with
+universe levels.</li>
+<li><strong>Passes Agda&rsquo;s termination &amp; positivity checkers.</strong>
+Many alternative encodings of IR types, especially the ones that
+are
+<a href="https://personal.cis.strath.ac.uk/neil.ghani/papers/ghani-mscs11.pdf">directly inspired by algebraic semantics [Ghani &amp; Hancock]</a>
+suffer from being too general to pass Agda&rsquo;s termination or positivity
+checkers.</li>
+<li><strong>Has description constructors that directly correspond to
+constructor declaration arguments.</strong>
+Implementing a high-level language that translates to a canonical
+kernel language is very difficult if the kernel language is too
+different from the high-level language. For this reason I have chosen
+to make the description (<code>Desc</code>) datatype enforce structure that is as
+similar to a higher-level constructor telescope declaration as
+possible. From the descriptions literature, this means extending the
+<a href="https://personal.cis.strath.ac.uk/conor.mcbride/pub/OAAO/Ornament.pdf">propositional encoding [McBride]</a>
+rather than the (albeit more general)
+<a href="http://gallium.inria.fr/~pdagand/stuffs/thesis-2011-phd/thesis.pdf">computational encoding [Dagand]</a>.
+From the IR literature, this means staying away from the more semantic
+encodings described by
+<a href="https://personal.cis.strath.ac.uk/neil.ghani/papers/ghani-mscs11.pdf">Ghani &amp; Hancock</a>,
+as well as subtle differences from the original encoding by Dybjer and
+Setzer encoding, as reviewed by
+<a href="https://personal.cis.strath.ac.uk/conor.mcbride/pub/SmallIR/SmallIR.pdf">Malatesta et. al.</a>.</li>
+<li><strong>Has an induction principle.</strong>
+The induction principle for datatypes encoded in the description literature is
+typically given, but elimination principles are only sometimes given.
+I also wanted a principle in the style of the description literature.</li>
+</ul>
+
+
+<h2>Non-Indexed Inductive-Recursive Descriptions</h2>
+
+<p>I&rsquo;m going to start with descriptions for non-indexed IR types, and move to
+indexed IR types in the subsequent section. Additionally, I will mainly
+focus on the definition of descriptions, and encoding types with
+descriptions. The harder part is defining the fixpoint for encoded types
+and the corresponding induction principle, which I briefly gloss over
+at the end of the post. Additionally, all the code presented in this
+post is linked to in the conclusion.</p>
+
+<p>A common use of IR is to
+model a dependently typed language. Below is the definition of an
+example language. The datatype definition (<code>Lang</code>) is mutually defined
+with an interpretation function whose domain is <code>Set</code>. Because the
+codomain is <code>Set</code> (rather than some small type like <code>ℕ</code>), this makes
+it a <em>large</em> inductive-recursive definition.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='Haskell'><span class='line'><span class="nf">mutual</span>
+</span><span class='line'>  <span class="kr">data</span> <span class="kt">Lang</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="kr">where</span>
+</span><span class='line'>    <span class="kt">Zero</span> <span class="kt">One</span> <span class="kt">Two</span> <span class="kt">:</span> <span class="kt">Lang</span>
+</span><span class='line'>    <span class="kt">Pair</span> <span class="kt">Fun</span> <span class="kt">Tree</span> <span class="kt">:</span> <span class="p">(</span><span class="kt">A</span> <span class="kt">:</span> <span class="kt">Lang</span><span class="p">)</span> <span class="p">(</span><span class="kt">B</span> <span class="kt">:</span> <span class="err">⟦</span> <span class="kt">A</span> <span class="err">⟧</span> <span class="err">→</span> <span class="kt">Lang</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Lang</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="err">⟦</span><span class="kr">_</span><span class="err">⟧</span> <span class="kt">:</span> <span class="kt">Lang</span> <span class="err">→</span> <span class="kt">Set</span>
+</span><span class='line'>  <span class="err">⟦</span> <span class="kt">Zero</span> <span class="err">⟧</span> <span class="ow">=</span> <span class="err">⊥</span>
+</span><span class='line'>  <span class="err">⟦</span> <span class="kt">One</span> <span class="err">⟧</span> <span class="ow">=</span> <span class="err">⊤</span>
+</span><span class='line'>  <span class="err">⟦</span> <span class="kt">Two</span> <span class="err">⟧</span> <span class="ow">=</span> <span class="kt">Bool</span>
+</span><span class='line'>  <span class="err">⟦</span> <span class="kt">Pair</span> <span class="kt">A</span> <span class="kt">B</span> <span class="err">⟧</span> <span class="ow">=</span> <span class="kt">Σ</span> <span class="err">⟦</span> <span class="kt">A</span> <span class="err">⟧</span> <span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="err">⟦</span> <span class="kt">B</span> <span class="n">a</span> <span class="err">⟧</span>
+</span><span class='line'>  <span class="err">⟦</span> <span class="kt">Fun</span> <span class="kt">A</span> <span class="kt">B</span> <span class="err">⟧</span> <span class="ow">=</span> <span class="p">(</span><span class="n">a</span> <span class="kt">:</span> <span class="err">⟦</span> <span class="kt">A</span> <span class="err">⟧</span><span class="p">)</span> <span class="err">→</span> <span class="err">⟦</span> <span class="kt">B</span> <span class="n">a</span> <span class="err">⟧</span>
+</span><span class='line'>  <span class="err">⟦</span> <span class="kt">Tree</span> <span class="kt">A</span> <span class="kt">B</span> <span class="err">⟧</span> <span class="ow">=</span> <span class="kt">W</span> <span class="err">⟦</span> <span class="kt">A</span> <span class="err">⟧</span> <span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="err">⟦</span> <span class="kt">B</span> <span class="n">a</span> <span class="err">⟧</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I will encode <code>Lang</code> using the following description datatype
+(<code>Desc</code>). <code>Desc</code> is parameterized by a datatype <code>O</code>, which is the type
+of the codomain of the IR interpretation function.
+It is easiest to think of the constructors of <code>Desc</code> as the pieces
+used to form the telescope of a constructor type declaration, such as
+<code>Two</code> and <code>Pair</code> in <code>Lang</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='Haskell'><span class='line'><span class="kr">data</span> <span class="kt">Desc</span> <span class="n">ℓ</span> <span class="p">{</span><span class="n">ℓ</span><span class="err">′</span><span class="p">}</span> <span class="p">(</span><span class="kt">O</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="err">′</span><span class="p">)</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="p">(</span><span class="n">lsuc</span> <span class="n">ℓ</span> <span class="err">⊔</span> <span class="n">ℓ</span><span class="err">′</span><span class="p">)</span>  <span class="kr">where</span>
+</span><span class='line'>  <span class="kt">End</span> <span class="kt">:</span> <span class="p">(</span><span class="n">o</span> <span class="kt">:</span> <span class="kt">O</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="n">ℓ</span> <span class="kt">O</span>
+</span><span class='line'>  <span class="kt">Rec</span> <span class="kt">:</span> <span class="p">(</span><span class="kt">B</span> <span class="kt">:</span> <span class="kt">O</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="n">ℓ</span> <span class="kt">O</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="n">ℓ</span> <span class="kt">O</span>
+</span><span class='line'>  <span class="kt">Ref</span> <span class="kt">:</span> <span class="p">(</span><span class="kt">A</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">)</span> <span class="p">(</span><span class="kt">B</span> <span class="kt">:</span> <span class="p">(</span><span class="n">o</span> <span class="kt">:</span> <span class="kt">A</span> <span class="err">→</span> <span class="kt">O</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="n">ℓ</span> <span class="kt">O</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="n">ℓ</span> <span class="kt">O</span>
+</span><span class='line'>  <span class="kt">Arg</span> <span class="kt">:</span> <span class="p">(</span><span class="kt">A</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">)</span> <span class="p">(</span><span class="kt">B</span> <span class="kt">:</span> <span class="kt">A</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="n">ℓ</span> <span class="kt">O</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="n">ℓ</span> <span class="kt">O</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>End</code> ends a constructor declaration, and specifies what the
+mutually-defined IR interpretation function returns for the
+constructor. <code>Rec</code> encodes a request for a recursive first-order
+argument, and the remainder of the telescope may depend on the
+interpretation function applied to this recursive argument.
+<code>Ref</code> encodes a request for a recursive function argument. To remain
+strictly positive, <code>Ref</code> asks for the type of the domain of the
+function argument, and the remainder of the telescope may depend on a
+function from a value of the domain of the function to the
+interpretation function applied to the result of the recursive function
+that <code>Ref</code> encodes.
+<code>Arg</code> records an ordinary argument by requesting the type of the
+argument, and the remainder of the telescope may depend on a value of
+that type.</p>
+
+<p>Below is the encoding of the the <code>Lang</code> datatype, and its
+interpretation function, as a description.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='Haskell'><span class='line'><span class="kr">data</span> <span class="kt">LangT</span> <span class="p">{</span><span class="n">ℓ</span><span class="p">}</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="n">ℓ</span> <span class="kr">where</span>
+</span><span class='line'>  <span class="kt">ZeroT</span> <span class="kt">OneT</span> <span class="kt">TwoT</span> <span class="kt">PairT</span> <span class="kt">FunT</span> <span class="kt">TreeT</span> <span class="kt">:</span> <span class="kt">LangT</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">LangD</span> <span class="kt">:</span> <span class="kt">Desc</span> <span class="p">(</span><span class="kt">Set</span> <span class="n">lzero</span><span class="p">)</span>
+</span><span class='line'><span class="kt">LangD</span> <span class="ow">=</span> <span class="kt">Arg</span> <span class="kt">LangT</span> <span class="n">λ</span>
+</span><span class='line'>  <span class="p">{</span> <span class="kt">ZeroT</span> <span class="err">→</span> <span class="kt">End</span> <span class="err">⊥</span>
+</span><span class='line'>  <span class="p">;</span> <span class="kt">OneT</span> <span class="err">→</span> <span class="kt">End</span> <span class="err">⊤</span>
+</span><span class='line'>  <span class="p">;</span> <span class="kt">TwoT</span> <span class="err">→</span> <span class="kt">End</span> <span class="kt">Bool</span>
+</span><span class='line'>  <span class="p">;</span> <span class="kt">PairT</span> <span class="err">→</span> <span class="kt">Rec</span> <span class="n">λ</span> <span class="kt">A</span> <span class="err">→</span> <span class="kt">Ref</span> <span class="p">(</span><span class="kt">Lift</span> <span class="kt">A</span><span class="p">)</span> <span class="n">λ</span> <span class="kt">B</span> <span class="err">→</span> <span class="kt">End</span> <span class="p">(</span><span class="kt">Σ</span> <span class="kt">A</span> <span class="p">(</span><span class="kt">B</span> <span class="err">∘</span> <span class="n">lift</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">;</span> <span class="kt">FunT</span> <span class="err">→</span> <span class="kt">Rec</span> <span class="n">λ</span> <span class="kt">A</span> <span class="err">→</span> <span class="kt">Ref</span> <span class="p">(</span><span class="kt">Lift</span> <span class="kt">A</span><span class="p">)</span> <span class="n">λ</span> <span class="kt">B</span> <span class="err">→</span> <span class="kt">End</span> <span class="p">((</span><span class="n">a</span> <span class="kt">:</span> <span class="kt">A</span><span class="p">)</span> <span class="err">→</span> <span class="kt">B</span> <span class="p">(</span><span class="n">lift</span> <span class="n">a</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">;</span> <span class="kt">TreeT</span> <span class="err">→</span> <span class="kt">Rec</span> <span class="n">λ</span> <span class="kt">A</span> <span class="err">→</span> <span class="kt">Ref</span> <span class="p">(</span><span class="kt">Lift</span> <span class="kt">A</span><span class="p">)</span> <span class="n">λ</span> <span class="kt">B</span> <span class="err">→</span> <span class="kt">End</span> <span class="p">(</span><span class="kt">W</span> <span class="kt">A</span> <span class="p">(</span><span class="kt">B</span> <span class="err">∘</span> <span class="n">lift</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>Two</code> constructor takes no arguments, and its interpretation
+function returns the <code>Bool</code> type, and the <code>Zero</code> and <code>One</code> cases are
+similar.
+The <code>Pair</code> constructor first takes a
+recursive argument, so the rest of the telescope can depend on its
+interpretation. Then, it takes a recursive function argument whose
+domain is the interpretation of the first argument. Once again, the
+remainder of the telescope may depend on the the <em>function</em> from the
+requested domain to the interpretation function result. Finally, the
+constructor declaration ends by saying that the interpretation of
+<code>Pair</code> as a whole is the sigma type (<code>Σ</code>) that we expect. The <code>Fun</code>
+and <code>Tree</code> constructors are encoded in the same way that <code>Pair</code> is.
+Also, I sprinkle <code>Lift</code> and <code>lift</code> in the right places to make the
+universe levels work out.</p>
+
+<p>Another standard example of a <em>small</em> inductive-recursive definition
+is an interpreter of an arithmetic language, as presented by
+<a href="https://personal.cis.strath.ac.uk/conor.mcbride/pub/SmallIR/SmallIR.pdf">Malatesta et. al.</a>.
+The idea is to express mathematical sums and products, where the
+domain of the sum or product specifies the bound on the iteration. See
+the paper for an in depth explanation, but below is the high-level
+code for the <code>Arith</code> type.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='Haskell'><span class='line'><span class="nf">sum</span> <span class="kt">:</span> <span class="p">(</span><span class="n">n</span> <span class="kt">:</span> <span class="kt">ℕ</span><span class="p">)</span> <span class="p">(</span><span class="n">f</span> <span class="kt">:</span> <span class="kt">Fin</span> <span class="n">n</span> <span class="err">→</span> <span class="kt">ℕ</span><span class="p">)</span> <span class="err">→</span> <span class="kt">ℕ</span>
+</span><span class='line'><span class="nf">sum</span> <span class="n">zero</span> <span class="n">f</span> <span class="ow">=</span> <span class="n">zero</span>
+</span><span class='line'><span class="nf">sum</span> <span class="p">(</span><span class="n">suc</span> <span class="n">n</span><span class="p">)</span> <span class="n">f</span> <span class="ow">=</span> <span class="n">f</span> <span class="n">zero</span> <span class="o">+</span> <span class="n">sum</span> <span class="n">n</span> <span class="p">(</span><span class="n">f</span> <span class="err">∘</span> <span class="n">suc</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">prod</span> <span class="kt">:</span> <span class="p">(</span><span class="n">n</span> <span class="kt">:</span> <span class="kt">ℕ</span><span class="p">)</span> <span class="p">(</span><span class="n">f</span> <span class="kt">:</span> <span class="kt">Fin</span> <span class="n">n</span> <span class="err">→</span> <span class="kt">ℕ</span><span class="p">)</span> <span class="err">→</span> <span class="kt">ℕ</span>
+</span><span class='line'><span class="nf">prod</span> <span class="n">zero</span> <span class="n">f</span> <span class="ow">=</span> <span class="n">suc</span> <span class="n">zero</span>
+</span><span class='line'><span class="nf">prod</span> <span class="p">(</span><span class="n">suc</span> <span class="n">n</span><span class="p">)</span> <span class="n">f</span> <span class="ow">=</span> <span class="n">f</span> <span class="n">zero</span> <span class="o">*</span> <span class="n">prod</span> <span class="n">n</span> <span class="p">(</span><span class="n">f</span> <span class="err">∘</span> <span class="n">suc</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">mutual</span>
+</span><span class='line'>  <span class="kr">data</span> <span class="kt">Arith</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="kr">where</span>
+</span><span class='line'>    <span class="kt">Num</span> <span class="kt">:</span> <span class="kt">ℕ</span> <span class="err">→</span> <span class="kt">Arith</span>
+</span><span class='line'>    <span class="kt">Sum</span> <span class="kt">:</span> <span class="p">(</span><span class="kt">A</span> <span class="kt">:</span> <span class="kt">Arith</span><span class="p">)</span> <span class="p">(</span><span class="n">f</span> <span class="kt">:</span> <span class="kt">Fin</span> <span class="p">(</span><span class="n">eval</span> <span class="kt">A</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Arith</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Arith</span>
+</span><span class='line'>    <span class="kt">Prod</span> <span class="kt">:</span> <span class="p">(</span><span class="kt">A</span> <span class="kt">:</span> <span class="kt">Arith</span><span class="p">)</span> <span class="p">(</span><span class="n">f</span> <span class="kt">:</span> <span class="kt">Fin</span> <span class="p">(</span><span class="n">eval</span> <span class="kt">A</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Arith</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Arith</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">eval</span> <span class="kt">:</span> <span class="kt">Arith</span> <span class="err">→</span> <span class="kt">ℕ</span>
+</span><span class='line'>  <span class="n">eval</span> <span class="p">(</span><span class="kt">Num</span> <span class="n">n</span><span class="p">)</span> <span class="ow">=</span> <span class="n">n</span>
+</span><span class='line'>  <span class="n">eval</span> <span class="p">(</span><span class="kt">Sum</span> <span class="kt">A</span> <span class="n">f</span><span class="p">)</span> <span class="ow">=</span> <span class="n">sum</span> <span class="p">(</span><span class="n">eval</span> <span class="kt">A</span><span class="p">)</span> <span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="n">sum</span> <span class="p">(</span><span class="n">toℕ</span> <span class="n">a</span><span class="p">)</span> <span class="n">λ</span> <span class="n">b</span> <span class="err">→</span> <span class="n">eval</span> <span class="p">(</span><span class="n">f</span> <span class="p">(</span><span class="n">inject</span> <span class="n">b</span><span class="p">))</span>
+</span><span class='line'>  <span class="n">eval</span> <span class="p">(</span><span class="kt">Prod</span> <span class="kt">A</span> <span class="n">f</span><span class="p">)</span> <span class="ow">=</span> <span class="n">prod</span> <span class="p">(</span><span class="n">eval</span> <span class="kt">A</span><span class="p">)</span> <span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="n">sum</span> <span class="p">(</span><span class="n">toℕ</span> <span class="n">a</span><span class="p">)</span> <span class="n">λ</span> <span class="n">b</span> <span class="err">→</span> <span class="n">eval</span> <span class="p">(</span><span class="n">f</span> <span class="p">(</span><span class="n">inject</span> <span class="n">b</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">sum</span><span class="o">-</span><span class="n">lt</span><span class="o">-</span><span class="mi">5</span> <span class="kt">:</span> <span class="kt">Arith</span>
+</span><span class='line'><span class="nf">sum</span><span class="o">-</span><span class="n">lt</span><span class="o">-</span><span class="mi">5</span> <span class="ow">=</span> <span class="kt">Sum</span> <span class="p">(</span><span class="kt">Num</span> <span class="mi">5</span><span class="p">)</span> <span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="kt">Num</span> <span class="p">(</span><span class="n">toℕ</span> <span class="n">a</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">test</span><span class="o">-</span><span class="n">eval</span> <span class="kt">:</span> <span class="n">eval</span> <span class="n">sum</span><span class="o">-</span><span class="n">lt</span><span class="o">-</span><span class="mi">5</span> <span class="err">≡</span> <span class="mi">10</span>
+</span><span class='line'><span class="nf">test</span><span class="o">-</span><span class="n">eval</span> <span class="ow">=</span> <span class="n">refl</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note the that it is a <em>small</em> IR type because the codomain of the
+interpretation function is a small type (<code>ℕ</code>). Below is the Desc encoding,
+which is very similar to what Malatesta et. al. give.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='Haskell'><span class='line'><span class="nf">sum</span> <span class="kt">:</span> <span class="p">(</span><span class="n">n</span> <span class="kt">:</span> <span class="kt">ℕ</span><span class="p">)</span> <span class="p">(</span><span class="n">f</span> <span class="kt">:</span> <span class="kt">Fin</span> <span class="n">n</span> <span class="err">→</span> <span class="kt">ℕ</span><span class="p">)</span> <span class="err">→</span> <span class="kt">ℕ</span>
+</span><span class='line'><span class="nf">sum</span> <span class="n">zero</span> <span class="n">f</span> <span class="ow">=</span> <span class="n">zero</span>
+</span><span class='line'><span class="nf">sum</span> <span class="p">(</span><span class="n">suc</span> <span class="n">n</span><span class="p">)</span> <span class="n">f</span> <span class="ow">=</span> <span class="n">f</span> <span class="n">zero</span> <span class="o">+</span> <span class="n">sum</span> <span class="n">n</span> <span class="p">(</span><span class="n">f</span> <span class="err">∘</span> <span class="n">suc</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">prod</span> <span class="kt">:</span> <span class="p">(</span><span class="n">n</span> <span class="kt">:</span> <span class="kt">ℕ</span><span class="p">)</span> <span class="p">(</span><span class="n">f</span> <span class="kt">:</span> <span class="kt">Fin</span> <span class="n">n</span> <span class="err">→</span> <span class="kt">ℕ</span><span class="p">)</span> <span class="err">→</span> <span class="kt">ℕ</span>
+</span><span class='line'><span class="nf">prod</span> <span class="n">zero</span> <span class="n">f</span> <span class="ow">=</span> <span class="n">suc</span> <span class="n">zero</span>
+</span><span class='line'><span class="nf">prod</span> <span class="p">(</span><span class="n">suc</span> <span class="n">n</span><span class="p">)</span> <span class="n">f</span> <span class="ow">=</span> <span class="n">f</span> <span class="n">zero</span> <span class="o">*</span> <span class="n">prod</span> <span class="n">n</span> <span class="p">(</span><span class="n">f</span> <span class="err">∘</span> <span class="n">suc</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="kr">data</span> <span class="kt">ArithT</span> <span class="p">{</span><span class="n">ℓ</span><span class="p">}</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="n">ℓ</span> <span class="kr">where</span>
+</span><span class='line'>  <span class="kt">NumT</span> <span class="kt">SumT</span> <span class="kt">ProdT</span> <span class="kt">:</span> <span class="kt">ArithT</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">ArithD</span> <span class="kt">:</span> <span class="kt">Desc</span> <span class="kt">ℕ</span>
+</span><span class='line'><span class="kt">ArithD</span> <span class="ow">=</span> <span class="kt">Arg</span> <span class="kt">ArithT</span> <span class="n">λ</span>
+</span><span class='line'>  <span class="p">{</span> <span class="kt">NumT</span> <span class="err">→</span> <span class="kt">Arg</span> <span class="kt">ℕ</span> <span class="n">λ</span> <span class="n">n</span> <span class="err">→</span> <span class="kt">End</span> <span class="n">n</span>
+</span><span class='line'>  <span class="p">;</span> <span class="kt">SumT</span> <span class="err">→</span> <span class="kt">Rec</span> <span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="kt">Ref</span> <span class="p">(</span><span class="kt">Fin</span> <span class="n">a</span><span class="p">)</span> <span class="n">λ</span> <span class="n">f</span> <span class="err">→</span> <span class="kt">End</span> <span class="p">(</span><span class="n">sum</span> <span class="n">a</span> <span class="n">f</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">;</span> <span class="kt">ProdT</span> <span class="err">→</span> <span class="kt">Rec</span> <span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="kt">Ref</span> <span class="p">(</span><span class="kt">Fin</span> <span class="n">a</span><span class="p">)</span> <span class="n">λ</span> <span class="n">f</span> <span class="err">→</span> <span class="kt">End</span> <span class="p">(</span><span class="n">prod</span> <span class="n">a</span> <span class="n">f</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Indexed Inductive-Recursive Descriptions</h2>
+
+<p>Both the <code>Lang</code> and <code>Arith</code> types had interpretations whose codomain
+was some constant value (<code>Set</code> and <code>ℕ</code> respectively). More generally,
+an inductive-recursive type may be indexed, and the codomain of the
+interpretation function may also be a type family. For example, you can
+imagine a type like <code>Type : ℕ → Set</code> where the index type is <code>I = ℕ</code>,
+and an interpretation function <code>eval : (n : ℕ) → Type n → Fin n</code> where
+the interpretation type is <code>O = Fin</code>.</p>
+
+<p>Below is the description type <code>Desc</code> modified to be able to encode
+indexed inductive-recursive definitions. It now takes an
+index type (<code>(I : Set ℓ)</code>) as an additional parameter to the
+(now dependent) interpretation type (<code>(O : I → Set ℓ)</code>).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='Haskell'><span class='line'><span class="kr">data</span> <span class="kt">Desc</span> <span class="p">{</span><span class="n">ℓ</span><span class="p">}</span> <span class="p">(</span><span class="kt">I</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">)</span> <span class="p">(</span><span class="kt">O</span> <span class="kt">:</span> <span class="kt">I</span> <span class="err">→</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">)</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="p">(</span><span class="n">lsuc</span> <span class="n">ℓ</span><span class="p">)</span> <span class="kr">where</span>
+</span><span class='line'>  <span class="kt">End</span> <span class="kt">:</span> <span class="p">(</span><span class="n">i</span> <span class="kt">:</span> <span class="kt">I</span><span class="p">)</span> <span class="p">(</span><span class="n">o</span> <span class="kt">:</span> <span class="kt">O</span> <span class="n">i</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span>
+</span><span class='line'>  <span class="kt">Rec</span> <span class="kt">:</span> <span class="p">(</span><span class="n">i</span> <span class="kt">:</span> <span class="kt">I</span><span class="p">)</span> <span class="p">(</span><span class="kt">B</span> <span class="kt">:</span> <span class="kt">O</span> <span class="n">i</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span>
+</span><span class='line'>  <span class="kt">Ref</span> <span class="kt">:</span> <span class="p">(</span><span class="kt">A</span> <span class="kt">:</span> <span class="kt">Set</span><span class="p">)</span> <span class="p">(</span><span class="n">i</span> <span class="kt">:</span> <span class="kt">A</span> <span class="err">→</span> <span class="kt">I</span><span class="p">)</span> <span class="p">(</span><span class="kt">B</span> <span class="kt">:</span> <span class="p">(</span><span class="n">o</span> <span class="kt">:</span> <span class="p">(</span><span class="n">a</span> <span class="kt">:</span> <span class="kt">A</span><span class="p">)</span> <span class="err">→</span> <span class="kt">O</span> <span class="p">(</span><span class="n">i</span> <span class="n">a</span><span class="p">))</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span>
+</span><span class='line'>  <span class="kt">Arg</span> <span class="kt">:</span> <span class="p">(</span><span class="kt">A</span> <span class="kt">:</span> <span class="kt">Set</span><span class="p">)</span> <span class="p">(</span><span class="kt">B</span> <span class="kt">:</span> <span class="kt">A</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The new <code>Desc</code> is a mixture of the old one (which is a slightly modified
+Dybjer-Setzer IR type) , and the indexed description by
+<a href="https://personal.cis.strath.ac.uk/conor.mcbride/pub/OAAO/Ornament.pdf">McBride</a>.
+Recall that descriptions encode constructor argument telescopes. At
+the end of a telescope (<code>End</code>), we must now specify what index the type is
+at, as well as the (dependent) value that the interpretation function
+returns for the constructor being defined. A recursive (<code>Rec</code>)
+argument requires the index at for the requested recursive type, and
+the remainder of the telescope of arguments may use the (dependent)
+result of the interpretation function. A recursive function argument
+(<code>Ref</code>) requires the type of the domain of the recursive argument, an
+index value (<code>I</code>) assuming the requested argument (<code>A</code>), and the rest
+of the constructor arguments telescope may depend on a <em>function</em> from
+the requested argument to the (dependent) interpretation function
+call. Finally, requesting an ordinary argument (<code>Arg</code>) is just as
+before.</p>
+
+<p>So far we have only looked at descriptions, but they are relatively
+useless and easy to get wrong if you haven&rsquo;t defined the corresponding
+fixpoint type (which interprets a description of a type as an actual
+type). First let&rsquo;s look at <code>El</code>, which interprets a description as a
+functor between indexed families of sets.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='Haskell'><span class='line'><span class="kt">El</span> <span class="kt">:</span> <span class="err">∀</span><span class="p">{</span><span class="n">ℓ</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">}</span> <span class="p">(</span><span class="kt">D</span> <span class="kt">:</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">)</span> <span class="p">(</span><span class="kt">X</span> <span class="kt">:</span> <span class="kt">I</span> <span class="err">→</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">)</span> <span class="p">(</span><span class="kt">Y</span> <span class="kt">:</span> <span class="err">∀</span><span class="p">{</span><span class="n">i</span><span class="p">}</span> <span class="err">→</span> <span class="kt">X</span> <span class="n">i</span> <span class="err">→</span> <span class="kt">O</span> <span class="n">i</span><span class="p">)</span> <span class="p">(</span><span class="n">i</span> <span class="kt">:</span> <span class="kt">I</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Set</span> <span class="n">ℓ</span>
+</span><span class='line'><span class="kt">El</span> <span class="p">(</span><span class="kt">End</span> <span class="n">j</span> <span class="n">o</span><span class="p">)</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="n">i</span> <span class="ow">=</span> <span class="n">j</span> <span class="err">≡</span> <span class="n">i</span>
+</span><span class='line'><span class="kt">El</span> <span class="p">(</span><span class="kt">Rec</span> <span class="n">j</span> <span class="kt">B</span><span class="p">)</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="n">i</span> <span class="ow">=</span> <span class="kt">Σ</span> <span class="p">(</span><span class="kt">X</span> <span class="n">j</span><span class="p">)</span> <span class="n">λ</span> <span class="n">x</span> <span class="err">→</span> <span class="kt">El</span> <span class="p">(</span><span class="kt">B</span> <span class="p">(</span><span class="kt">Y</span> <span class="n">x</span><span class="p">))</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="n">i</span>
+</span><span class='line'><span class="kt">El</span> <span class="p">(</span><span class="kt">Ref</span> <span class="kt">A</span> <span class="n">j</span> <span class="kt">B</span><span class="p">)</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="n">i</span> <span class="ow">=</span> <span class="kt">Σ</span> <span class="p">((</span><span class="n">a</span> <span class="kt">:</span> <span class="kt">A</span><span class="p">)</span> <span class="err">→</span> <span class="kt">X</span> <span class="p">(</span><span class="n">j</span> <span class="n">a</span><span class="p">))</span> <span class="n">λ</span> <span class="n">f</span> <span class="err">→</span> <span class="kt">El</span> <span class="p">(</span><span class="kt">B</span> <span class="p">(</span><span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="kt">Y</span> <span class="p">(</span><span class="n">f</span> <span class="n">a</span><span class="p">)))</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="n">i</span>
+</span><span class='line'><span class="kt">El</span> <span class="p">(</span><span class="kt">Arg</span> <span class="kt">A</span> <span class="kt">B</span><span class="p">)</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="n">i</span> <span class="ow">=</span> <span class="kt">Σ</span> <span class="kt">A</span> <span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="kt">El</span> <span class="p">(</span><span class="kt">B</span> <span class="n">a</span><span class="p">)</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="n">i</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>El</code> gets an additional argument (<code>Y</code>), representing the interpretation
+function of the described datatype. To define <code>El</code>, we must use <code>Y</code> wherever
+we need to get the description from the codomain (<code>B</code>) of a recursive
+first-order (<code>Rec</code>) or higher-order (<code>Ref</code>) argument.</p>
+
+<p>More interestingly, we can now define the fixpoint datatype <code>μ</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='Haskell'><span class='line'><span class="nf">mutual</span>
+</span><span class='line'>  <span class="kr">data</span> <span class="n">μ</span> <span class="p">{</span><span class="n">ℓ</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">}</span> <span class="p">(</span><span class="kt">D</span> <span class="kt">:</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">)</span> <span class="p">(</span><span class="n">i</span> <span class="kt">:</span> <span class="kt">I</span><span class="p">)</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="n">ℓ</span> <span class="kr">where</span>
+</span><span class='line'>    <span class="n">init</span> <span class="kt">:</span> <span class="kt">El</span> <span class="kt">D</span> <span class="p">(</span><span class="n">μ</span> <span class="kt">D</span><span class="p">)</span> <span class="p">(</span><span class="n">foldO</span> <span class="kt">D</span><span class="p">)</span> <span class="n">i</span> <span class="err">→</span> <span class="n">μ</span> <span class="kt">D</span> <span class="n">i</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">foldO</span> <span class="kt">:</span> <span class="err">∀</span><span class="p">{</span><span class="n">ℓ</span><span class="p">}</span> <span class="p">{</span><span class="kt">I</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">}</span> <span class="p">{</span><span class="kt">O</span> <span class="kt">:</span> <span class="kt">I</span> <span class="err">→</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">}</span> <span class="p">{</span><span class="n">i</span><span class="p">}</span> <span class="p">(</span><span class="kt">D</span> <span class="kt">:</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">)</span> <span class="err">→</span> <span class="n">μ</span> <span class="kt">D</span> <span class="n">i</span> <span class="err">→</span> <span class="kt">O</span> <span class="n">i</span>
+</span><span class='line'>  <span class="n">foldO</span> <span class="kt">D</span> <span class="p">(</span><span class="n">init</span> <span class="n">xs</span><span class="p">)</span> <span class="ow">=</span> <span class="n">foldsO</span> <span class="kt">D</span> <span class="kt">D</span> <span class="n">xs</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">foldsO</span> <span class="kt">:</span> <span class="err">∀</span><span class="p">{</span><span class="n">ℓ</span><span class="p">}</span> <span class="p">{</span><span class="kt">I</span> <span class="kt">:</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">}</span> <span class="p">{</span><span class="kt">O</span> <span class="kt">:</span> <span class="kt">I</span> <span class="err">→</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">}</span> <span class="p">{</span><span class="n">i</span><span class="p">}</span> <span class="p">(</span><span class="kt">D</span> <span class="kt">E</span> <span class="kt">:</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">)</span> <span class="err">→</span> <span class="kt">El</span> <span class="kt">D</span> <span class="p">(</span><span class="n">μ</span> <span class="kt">E</span><span class="p">)</span> <span class="p">(</span><span class="n">foldO</span> <span class="kt">E</span><span class="p">)</span> <span class="n">i</span> <span class="err">→</span> <span class="kt">O</span> <span class="n">i</span>
+</span><span class='line'>  <span class="n">foldsO</span> <span class="p">(</span><span class="kt">End</span> <span class="n">j</span> <span class="n">o</span><span class="p">)</span> <span class="kt">E</span> <span class="n">refl</span> <span class="ow">=</span> <span class="n">o</span>
+</span><span class='line'>  <span class="n">foldsO</span> <span class="p">(</span><span class="kt">Rec</span> <span class="n">j</span> <span class="kt">B</span><span class="p">)</span> <span class="kt">E</span> <span class="p">(</span><span class="n">x</span> <span class="p">,</span> <span class="n">xs</span><span class="p">)</span> <span class="ow">=</span> <span class="n">foldsO</span> <span class="p">(</span><span class="kt">B</span> <span class="p">(</span><span class="n">foldO</span> <span class="kt">E</span> <span class="n">x</span> <span class="p">))</span> <span class="kt">E</span> <span class="n">xs</span>
+</span><span class='line'>  <span class="n">foldsO</span> <span class="p">(</span><span class="kt">Ref</span> <span class="kt">A</span> <span class="n">j</span> <span class="kt">B</span><span class="p">)</span> <span class="kt">E</span> <span class="p">(</span><span class="n">f</span> <span class="p">,</span> <span class="n">xs</span><span class="p">)</span> <span class="ow">=</span> <span class="n">foldsO</span> <span class="p">(</span><span class="kt">B</span> <span class="p">(</span><span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="n">foldO</span> <span class="kt">E</span> <span class="p">(</span><span class="n">f</span> <span class="n">a</span><span class="p">)))</span> <span class="kt">E</span> <span class="n">xs</span>
+</span><span class='line'>  <span class="n">foldsO</span> <span class="p">(</span><span class="kt">Arg</span> <span class="kt">A</span> <span class="kt">B</span><span class="p">)</span> <span class="kt">E</span> <span class="p">(</span><span class="n">a</span> <span class="p">,</span> <span class="n">xs</span><span class="p">)</span> <span class="ow">=</span> <span class="n">foldsO</span> <span class="p">(</span><span class="kt">B</span> <span class="n">a</span><span class="p">)</span> <span class="kt">E</span> <span class="n">xs</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I tried to define this a couple of years ago but stuck for some
+reason. I tried once again a couple of days ago and arrived at this
+definition. In the IR literature <code>El</code> is
+<a href="https://personal.cis.strath.ac.uk/neil.ghani/papers/ghani-mscs11.pdf">sometimes referred to</a> as
+<code>⟦_⟧₀</code>, and a more general version of <code>foldsO</code> is referred to as
+<code>⟦_⟧₁</code>. However, to get <code>foldO</code> to pass Agda&rsquo;s termination check we must inline a
+mutually defined specialized version of <code>⟦_⟧₁</code>, namely <code>foldsO</code>. This
+is basically the same trick used to get the elimination principle
+<code>ind</code> to terminate by inlining <code>hyps</code>. I remember trying to reuse this
+termination technique a couple
+of years ago and failing, but anyhow there it is.</p>
+
+<p>Finally, for the sake of completeness below is the adapted definition
+of <code>Hyps</code> (a collection of inductive hypotheses), <code>ind</code> (the primitive
+induction principle for described types), and <code>hyps</code> (a specialized
+mapping function to collect inductive hypotheses).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='Haskell'><span class='line'><span class="kt">Hyps</span> <span class="kt">:</span> <span class="err">∀</span><span class="p">{</span><span class="n">ℓ</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">}</span> <span class="p">(</span><span class="kt">D</span> <span class="kt">:</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">)</span> <span class="p">(</span><span class="kt">X</span> <span class="kt">:</span> <span class="kt">I</span> <span class="err">→</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">)</span> <span class="p">(</span><span class="kt">Y</span> <span class="kt">:</span> <span class="err">∀</span><span class="p">{</span><span class="n">i</span><span class="p">}</span> <span class="err">→</span> <span class="kt">X</span> <span class="n">i</span> <span class="err">→</span> <span class="kt">O</span> <span class="n">i</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="kt">P</span> <span class="kt">:</span> <span class="p">{</span><span class="n">i</span> <span class="kt">:</span> <span class="kt">I</span><span class="p">}</span> <span class="err">→</span> <span class="kt">X</span> <span class="n">i</span> <span class="err">→</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">)</span> <span class="p">(</span><span class="n">i</span> <span class="kt">:</span> <span class="kt">I</span><span class="p">)</span> <span class="p">(</span><span class="n">xs</span> <span class="kt">:</span> <span class="kt">El</span> <span class="kt">D</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="n">i</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Set</span> <span class="n">ℓ</span>
+</span><span class='line'><span class="kt">Hyps</span> <span class="p">(</span><span class="kt">End</span> <span class="n">j</span> <span class="n">o</span><span class="p">)</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="kt">P</span> <span class="n">i</span> <span class="n">q</span> <span class="ow">=</span> <span class="kt">Lift</span> <span class="err">⊤</span>
+</span><span class='line'><span class="kt">Hyps</span> <span class="p">(</span><span class="kt">Rec</span> <span class="n">j</span> <span class="kt">D</span><span class="p">)</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="kt">P</span> <span class="n">i</span> <span class="p">(</span><span class="n">x</span> <span class="p">,</span> <span class="n">xs</span><span class="p">)</span> <span class="ow">=</span> <span class="kt">Σ</span> <span class="p">(</span><span class="kt">P</span> <span class="n">x</span><span class="p">)</span> <span class="p">(</span><span class="n">λ</span> <span class="kr">_</span> <span class="err">→</span> <span class="kt">Hyps</span> <span class="p">(</span><span class="kt">D</span> <span class="p">(</span><span class="kt">Y</span> <span class="n">x</span><span class="p">))</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="kt">P</span> <span class="n">i</span> <span class="n">xs</span><span class="p">)</span>
+</span><span class='line'><span class="kt">Hyps</span> <span class="p">(</span><span class="kt">Ref</span> <span class="kt">A</span> <span class="n">j</span> <span class="kt">D</span><span class="p">)</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="kt">P</span> <span class="n">i</span> <span class="p">(</span><span class="n">f</span> <span class="p">,</span> <span class="n">xs</span><span class="p">)</span> <span class="ow">=</span> <span class="kt">Σ</span> <span class="p">((</span><span class="n">a</span> <span class="kt">:</span> <span class="kt">A</span><span class="p">)</span> <span class="err">→</span> <span class="kt">P</span> <span class="p">(</span><span class="n">f</span> <span class="n">a</span><span class="p">))</span> <span class="p">(</span><span class="n">λ</span> <span class="kr">_</span> <span class="err">→</span> <span class="kt">Hyps</span> <span class="p">(</span><span class="kt">D</span> <span class="p">(</span><span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="kt">Y</span> <span class="p">(</span><span class="n">f</span> <span class="n">a</span><span class="p">)))</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="kt">P</span> <span class="n">i</span> <span class="n">xs</span><span class="p">)</span>
+</span><span class='line'><span class="kt">Hyps</span> <span class="p">(</span><span class="kt">Arg</span> <span class="kt">A</span> <span class="kt">B</span><span class="p">)</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="kt">P</span> <span class="n">i</span> <span class="p">(</span><span class="n">a</span> <span class="p">,</span> <span class="n">xs</span><span class="p">)</span> <span class="ow">=</span> <span class="kt">Hyps</span> <span class="p">(</span><span class="kt">B</span> <span class="n">a</span><span class="p">)</span> <span class="kt">X</span> <span class="kt">Y</span> <span class="kt">P</span> <span class="n">i</span> <span class="n">xs</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">----------------------------------------------------------------------</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">ind</span> <span class="kt">:</span> <span class="err">∀</span><span class="p">{</span><span class="n">ℓ</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">}</span> <span class="p">(</span><span class="kt">D</span> <span class="kt">:</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="kt">P</span> <span class="kt">:</span> <span class="err">∀</span><span class="p">{</span><span class="n">i</span><span class="p">}</span> <span class="err">→</span> <span class="n">μ</span> <span class="kt">D</span> <span class="n">i</span> <span class="err">→</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="n">α</span> <span class="kt">:</span> <span class="err">∀</span><span class="p">{</span><span class="n">i</span><span class="p">}</span> <span class="p">(</span><span class="n">xs</span> <span class="kt">:</span> <span class="kt">El</span> <span class="kt">D</span> <span class="p">(</span><span class="n">μ</span> <span class="kt">D</span><span class="p">)</span> <span class="p">(</span><span class="n">foldO</span> <span class="kt">D</span><span class="p">)</span> <span class="n">i</span><span class="p">)</span> <span class="p">(</span><span class="n">ihs</span> <span class="kt">:</span> <span class="kt">Hyps</span> <span class="kt">D</span> <span class="p">(</span><span class="n">μ</span> <span class="kt">D</span><span class="p">)</span> <span class="p">(</span><span class="n">foldO</span> <span class="kt">D</span><span class="p">)</span> <span class="kt">P</span> <span class="n">i</span> <span class="n">xs</span><span class="p">)</span> <span class="err">→</span> <span class="kt">P</span> <span class="p">(</span><span class="n">init</span> <span class="n">xs</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">{</span><span class="n">i</span> <span class="kt">:</span> <span class="kt">I</span><span class="p">}</span>
+</span><span class='line'>  <span class="p">(</span><span class="n">x</span> <span class="kt">:</span> <span class="n">μ</span> <span class="kt">D</span> <span class="n">i</span><span class="p">)</span>
+</span><span class='line'>  <span class="err">→</span> <span class="kt">P</span> <span class="n">x</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">hyps</span> <span class="kt">:</span> <span class="err">∀</span><span class="p">{</span><span class="n">ℓ</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">}</span> <span class="p">(</span><span class="kt">D</span> <span class="kt">E</span> <span class="kt">:</span> <span class="kt">Desc</span> <span class="kt">I</span> <span class="kt">O</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="kt">P</span> <span class="kt">:</span> <span class="err">∀</span><span class="p">{</span><span class="n">i</span><span class="p">}</span> <span class="err">→</span> <span class="n">μ</span> <span class="kt">E</span> <span class="n">i</span> <span class="err">→</span> <span class="kt">Set</span> <span class="n">ℓ</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="n">α</span> <span class="kt">:</span> <span class="err">∀</span><span class="p">{</span><span class="n">i</span><span class="p">}</span> <span class="p">(</span><span class="n">xs</span> <span class="kt">:</span> <span class="kt">El</span> <span class="kt">E</span> <span class="p">(</span><span class="n">μ</span> <span class="kt">E</span><span class="p">)</span> <span class="p">(</span><span class="n">foldO</span> <span class="kt">E</span><span class="p">)</span> <span class="n">i</span><span class="p">)</span> <span class="p">(</span><span class="n">ihs</span> <span class="kt">:</span> <span class="kt">Hyps</span> <span class="kt">E</span> <span class="p">(</span><span class="n">μ</span> <span class="kt">E</span><span class="p">)</span> <span class="p">(</span><span class="n">foldO</span> <span class="kt">E</span><span class="p">)</span> <span class="kt">P</span> <span class="n">i</span> <span class="n">xs</span><span class="p">)</span> <span class="err">→</span> <span class="kt">P</span> <span class="p">(</span><span class="n">init</span> <span class="n">xs</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">{</span><span class="n">i</span> <span class="kt">:</span> <span class="kt">I</span><span class="p">}</span> <span class="p">(</span><span class="n">xs</span> <span class="kt">:</span> <span class="kt">El</span> <span class="kt">D</span> <span class="p">(</span><span class="n">μ</span> <span class="kt">E</span><span class="p">)</span> <span class="p">(</span><span class="n">foldO</span> <span class="kt">E</span><span class="p">)</span> <span class="n">i</span><span class="p">)</span> <span class="err">→</span> <span class="kt">Hyps</span> <span class="kt">D</span> <span class="p">(</span><span class="n">μ</span> <span class="kt">E</span><span class="p">)</span> <span class="p">(</span><span class="n">foldO</span> <span class="kt">E</span><span class="p">)</span> <span class="kt">P</span> <span class="n">i</span> <span class="n">xs</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">ind</span> <span class="kt">D</span> <span class="kt">P</span> <span class="n">α</span> <span class="p">(</span><span class="n">init</span> <span class="n">xs</span><span class="p">)</span> <span class="ow">=</span> <span class="n">α</span> <span class="n">xs</span> <span class="p">(</span><span class="n">hyps</span> <span class="kt">D</span> <span class="kt">D</span> <span class="kt">P</span> <span class="n">α</span> <span class="n">xs</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">hyps</span> <span class="p">(</span><span class="kt">End</span> <span class="n">i</span> <span class="n">o</span><span class="p">)</span> <span class="kt">E</span> <span class="kt">P</span> <span class="n">α</span> <span class="n">q</span> <span class="ow">=</span> <span class="n">lift</span> <span class="n">tt</span>
+</span><span class='line'><span class="nf">hyps</span> <span class="p">(</span><span class="kt">Rec</span> <span class="n">i</span> <span class="kt">B</span><span class="p">)</span> <span class="kt">E</span> <span class="kt">P</span> <span class="n">α</span> <span class="p">(</span><span class="n">x</span> <span class="p">,</span> <span class="n">xs</span><span class="p">)</span> <span class="ow">=</span> <span class="n">ind</span> <span class="kt">E</span> <span class="kt">P</span> <span class="n">α</span> <span class="n">x</span> <span class="p">,</span> <span class="n">hyps</span> <span class="p">(</span><span class="kt">B</span> <span class="p">(</span><span class="n">foldO</span> <span class="kt">E</span> <span class="n">x</span><span class="p">))</span> <span class="kt">E</span> <span class="kt">P</span> <span class="n">α</span> <span class="n">xs</span>
+</span><span class='line'><span class="nf">hyps</span> <span class="p">(</span><span class="kt">Ref</span> <span class="kt">A</span> <span class="n">i</span> <span class="kt">B</span><span class="p">)</span> <span class="kt">E</span> <span class="kt">P</span> <span class="n">α</span> <span class="p">(</span><span class="n">f</span> <span class="p">,</span> <span class="n">xs</span><span class="p">)</span> <span class="ow">=</span> <span class="p">(</span><span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="n">ind</span> <span class="kt">E</span> <span class="kt">P</span> <span class="n">α</span> <span class="p">(</span><span class="n">f</span> <span class="n">a</span><span class="p">))</span> <span class="p">,</span> <span class="n">hyps</span> <span class="p">(</span><span class="kt">B</span> <span class="p">(</span><span class="n">λ</span> <span class="n">a</span> <span class="err">→</span> <span class="n">foldO</span> <span class="kt">E</span> <span class="p">(</span><span class="n">f</span> <span class="n">a</span><span class="p">)))</span> <span class="kt">E</span> <span class="kt">P</span> <span class="n">α</span> <span class="n">xs</span>
+</span><span class='line'><span class="nf">hyps</span> <span class="p">(</span><span class="kt">Arg</span> <span class="kt">A</span> <span class="kt">B</span><span class="p">)</span> <span class="kt">E</span> <span class="kt">P</span> <span class="n">α</span> <span class="p">(</span><span class="n">a</span> <span class="p">,</span> <span class="n">xs</span><span class="p">)</span> <span class="ow">=</span> <span class="n">hyps</span> <span class="p">(</span><span class="kt">B</span> <span class="n">a</span><span class="p">)</span> <span class="kt">E</span> <span class="kt">P</span> <span class="n">α</span> <span class="n">xs</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Conclusion</h2>
+
+<p>Well there it is, indexed inductive-recursive descriptions that
+satisfy all of my goals stated at the beginning of the post! The
+beginning of the post was background on non-indexed IR encoding.
+However, the useful bit of the code to reuse is in the previous
+section, which includes the universe-polymorphic, indexed,
+inductive-recursive, constructor-esque descriptions, as well as their primitive
+introduction and elimination rules.</p>
+
+<p>The code used throughout the post is linked below:</p>
+
+<ul>
+<li><a href="https://github.com/spire/spire.github.io/blob/source/source/_code/2014-08-04-inductive-recursive-descriptions/IR.agda">Declared Non-Indexed IR</a></li>
+<li><a href="https://github.com/spire/spire.github.io/blob/source/source/_code/2014-08-04-inductive-recursive-descriptions/DescIR.agda">Encoded Non-Indexed IR</a></li>
+<li><a href="https://github.com/spire/spire.github.io/blob/source/source/_code/2014-08-04-inductive-recursive-descriptions/IDescIR.agda">Encoded Indexed IR</a></li>
+</ul>
+
+
+<p>If you want some homework, try inventing your own indexed
+inductive-recursive type, and encode it both in Agda and as a
+description. You can also borrow a type to encode from
+<a href="http://www.cse.chalmers.se/~peterd/papers/Indexed_IR.pdf">Dybjer &amp; Setzer&rsquo;s paper on the topic</a>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Larry Diehl</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-04T19:52:32-07:00" pubdate data-updated="true">Aug 4<sup>th</sup>, 2014</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://spire-lang.org/blog/2014/08/04/inductive-recursive-descriptions/" data-via="" data-counturl="http://spire-lang.org/blog/2014/08/04/inductive-recursive-descriptions/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/01/15/modeling-elimination-of-described-types/" title="Previous Post: Modeling Elimination of Described Types">&laquo; Modeling Elimination of Described Types</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/08/04/inductive-recursive-descriptions/">Inductive-Recursive Descriptions</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/15/modeling-elimination-of-described-types/">Modeling Elimination of Described Types</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/05/an-unremarkable-type-checker/">An Unremarkable Type Checker</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/spire">@spire</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'spire',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Larry Diehl -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'spire-lang';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://spire-lang.org/blog/2014/08/04/inductive-recursive-descriptions/';
+        var disqus_url = 'http://spire-lang.org/blog/2014/08/04/inductive-recursive-descriptions/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
