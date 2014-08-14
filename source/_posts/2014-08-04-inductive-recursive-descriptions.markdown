@@ -92,11 +92,11 @@ used to form the telescope of a constructor type declaration, such as
 `Two` and `Pair` in `Lang`.
 
 ```
-data Desc ℓ {ℓ′} (O : Set ℓ′) : Set (lsuc ℓ ⊔ ℓ′)  where
-  End : (o : O) → Desc ℓ O
-  Rec : (B : O → Desc ℓ O) → Desc ℓ O
-  Ref : (A : Set ℓ) (B : (o : A → O) → Desc ℓ O) → Desc ℓ O
-  Arg : (A : Set ℓ) (B : A → Desc ℓ O) → Desc ℓ O
+data Desc {ℓ} (O : Set ℓ) : Set (lsuc ℓ)  where
+  End : (o : O) → Desc O
+  Rec : (B : O → Desc O) → Desc O
+  Ref : (A : Set ℓ) (B : (o : A → O) → Desc O) → Desc O
+  Arg : (A : Set ℓ) (B : A → Desc O) → Desc O
 ```
 
 `End` ends a constructor declaration, and specifies what the
