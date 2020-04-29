@@ -44,7 +44,7 @@ mutual
 
 Hyps : ∀{ℓ I O} (D : Desc I O) (X : I → Set ℓ) (Y : ∀{i} → X i → O i) 
   (P : {i : I} → X i → Set ℓ) (i : I) (xs : El D X Y i) → Set ℓ
-Hyps (End j o) X Y P i q = Lift ⊤
+Hyps (End j o) X Y P i q = Lift _ ⊤
 Hyps (Rec j D) X Y P i (x , xs) = Σ (P x) (λ _ → Hyps (D (Y x)) X Y P i xs)
 Hyps (Ref A j D) X Y P i (f , xs) = Σ ((a : A) → P (f a)) (λ _ → Hyps (D (λ a → Y (f a))) X Y P i xs)
 Hyps (Arg A B) X Y P i (a , xs) = Hyps (B a) X Y P i xs
